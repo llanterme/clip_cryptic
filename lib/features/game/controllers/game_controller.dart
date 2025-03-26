@@ -30,18 +30,17 @@ class GameController extends _$GameController {
       // We're using the hardcoded user ID in the service now
       _rounds = await gameService.getUnseenRounds('');
       
-      if (_rounds.isEmpty) {
-        state = GameStatus.gameOver;
-        return;
-      }
-
+      // Reset the current round index
       _currentRoundIndex = 0;
-      _lastAnswerCorrect = false;
-      state = GameStatus.playing;
       
-      // Debug the first round
-      final firstRound = _rounds.isNotEmpty ? _rounds[0] : null;
-      if (firstRound != null) {
+      if (_rounds.isEmpty) {
+        developer.log('No rounds available');
+        state = GameStatus.gameComplete;
+      } else {
+        state = GameStatus.playing;
+        
+        // Debug the first round loaded
+        final firstRound = _rounds[0];
         developer.log('First round loaded: gifId=${firstRound.gifId}');
         developer.log('Options: ${firstRound.options.join(", ")}');
         developer.log('Correct answer: "${firstRound.correctAnswer}"');
@@ -53,7 +52,7 @@ class GameController extends _$GameController {
   }
 
   GameRound? getCurrentRound() {
-    if (state != GameStatus.playing || _currentRoundIndex >= _rounds.length) {
+    if (state != GameStatus.playing || _currentRoundIndex >= _rounds.length || _rounds.isEmpty) {
       return null;
     }
     return _rounds[_currentRoundIndex];
@@ -61,11 +60,21 @@ class GameController extends _$GameController {
 
   void submitAnswer(String answer) {
     final currentRound = getCurrentRound();
-    if (currentRound == null) return;
+    if (currentRound == null) {
+      developer.log('No current round available');
+      return;
+    }
     
     // Debug the comparison
+    developer.log('Current round index: $_currentRoundIndex');
     developer.log('User selected: "$answer"');
     developer.log('Correct answer: "${currentRound.correctAnswer}"');
+    developer.log('Current round data: ${currentRound.toString()}');
+    developer.log('Options available: ${currentRound.options.join(", ")}');
+    
+    // Check if the selected answer is actually in the options
+    final isOptionValid = currentRound.options.contains(answer);
+    developer.log('Is selected answer in options? $isOptionValid');
     
     // Normalize both strings to handle case sensitivity and whitespace issues
     final normalizedAnswer = answer.trim().toLowerCase();
@@ -75,26 +84,42 @@ class GameController extends _$GameController {
     developer.log('Normalized correct answer: "$normalizedCorrectAnswer"');
     developer.log('Match? ${normalizedCorrectAnswer == normalizedAnswer}');
     
+    // Check each option against the correct answer for debugging
+    for (final option in currentRound.options) {
+      final normalizedOption = option.trim().toLowerCase();
+      developer.log('Option: "$option" normalized: "$normalizedOption" matches correct answer? ${normalizedOption == normalizedCorrectAnswer}');
+    }
+    
+    // Direct string comparison with normalization
     if (normalizedCorrectAnswer == normalizedAnswer) {
+      developer.log('CORRECT ANSWER!');
       _lastAnswerCorrect = true;
+      
       // Move to next round
       _currentRoundIndex++;
       
       // Check if this was the last round
       if (_currentRoundIndex >= _rounds.length) {
+        developer.log('Game complete! No more rounds.');
         state = GameStatus.gameComplete;
       } else {
-        // Trigger a UI refresh by updating the state
-        state = GameStatus.playing;
+        // Force UI refresh by setting state to a temporary value and then back
+        state = GameStatus.loading;
         
-        // Debug the next round
-        final nextRound = _rounds[_currentRoundIndex];
-        developer.log('Next round: gifId=${nextRound.gifId}');
-        developer.log('Options: ${nextRound.options.join(", ")}');
-        developer.log('Correct answer: "${nextRound.correctAnswer}"');
+        // Use a short delay to ensure the UI updates
+        Future.delayed(const Duration(milliseconds: 100), () {
+          state = GameStatus.playing;
+          
+          // Debug the next round
+          final nextRound = _rounds[_currentRoundIndex];
+          developer.log('Next round: gifId=${nextRound.gifId}');
+          developer.log('Options: ${nextRound.options.join(", ")}');
+          developer.log('Correct answer: "${nextRound.correctAnswer}"');
+        });
       }
     } else {
       // Game over on wrong answer
+      developer.log('WRONG ANSWER!');
       _lastAnswerCorrect = false;
       state = GameStatus.gameOver;
     }

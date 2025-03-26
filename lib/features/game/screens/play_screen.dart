@@ -12,7 +12,12 @@ class PlayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final gameStatus = ref.watch(gameControllerProvider);
     final controller = ref.read(gameControllerProvider.notifier);
+    
+    // Force rebuild when game state changes
     final currentRound = controller.getCurrentRound();
+    final currentRoundIndex = controller.getCurrentRoundNumber();
+    
+    developer.log('Building PlayScreen with game status: $gameStatus, round index: ${currentRoundIndex - 1}');
 
     return AnimatedBackground(
       child: Padding(
@@ -65,7 +70,8 @@ class PlayScreen extends ConsumerWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: _buildGifImage(currentRound.gifUrl),
+                          // Add key with currentRoundIndex to force refresh
+                          child: _buildGifImage(currentRound.gifUrl, currentRoundIndex),
                         ),
                       ),
                     ),
@@ -78,7 +84,7 @@ class PlayScreen extends ConsumerWidget {
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
                         children: currentRound.options.map((option) {
-                          return _buildAnswerButton(option, controller);
+                          return _buildAnswerButton(option, controller, currentRoundIndex);
                         }).toList(),
                       ),
                     ),
@@ -98,13 +104,14 @@ class PlayScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGifImage(String url) {
-    developer.log('Loading GIF from URL: $url');
+  Widget _buildGifImage(String url, int roundIndex) {
+    developer.log('Loading GIF from URL: $url for round: $roundIndex');
     
     return Image.network(
       url,
       fit: BoxFit.cover,
-      key: ValueKey(url), // Add a key to force refresh when URL changes
+      // Add roundIndex to the key to force refresh when round changes
+      key: ValueKey('gif_$roundIndex'),
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
         return Center(
@@ -148,10 +155,12 @@ class PlayScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAnswerButton(String option, GameController controller) {
+  Widget _buildAnswerButton(String option, GameController controller, int roundIndex) {
     return ElevatedButton(
+      // Add roundIndex to the key to force refresh when round changes
+      key: ValueKey('button_${option}_$roundIndex'),
       onPressed: () {
-        developer.log('User selected option: $option');
+        developer.log('User selected option: $option for round: $roundIndex');
         controller.submitAnswer(option);
       },
       style: ElevatedButton.styleFrom(
@@ -213,7 +222,8 @@ class PlayScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGameCompleteView(BuildContext context, GameController controller) {
+  Widget _buildGameCompleteView(
+      BuildContext context, GameController controller) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
