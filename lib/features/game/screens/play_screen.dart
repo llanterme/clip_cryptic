@@ -12,12 +12,16 @@ class PlayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final gameStatus = ref.watch(gameControllerProvider);
     final controller = ref.read(gameControllerProvider.notifier);
-    
+
     // Force rebuild when game state changes
     final currentRound = controller.getCurrentRound();
     final currentRoundIndex = controller.getCurrentRoundNumber();
-    
-    developer.log('Building PlayScreen with game status: $gameStatus, round index: ${currentRoundIndex - 1}');
+    final currentScore = controller.getCurrentScore();
+    final currentStreak = controller.getCurrentStreak();
+    final selectedAnswer = controller.getSelectedAnswer();
+
+    developer.log(
+        'Building PlayScreen with game status: $gameStatus, round index: ${currentRoundIndex - 1}, score: $currentScore, streak: $currentStreak');
 
     return AnimatedBackground(
       child: Padding(
@@ -33,17 +37,19 @@ class PlayScreen extends ConsumerWidget {
                   color: AppTheme.primaryColor,
                 ),
               ),
-            ] else if (gameStatus == GameStatus.playing && currentRound != null) ...[
+            ] else if (gameStatus == GameStatus.playing &&
+                currentRound != null) ...[
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Progress indicator
+                    // Score and progress indicator
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          // Round progress
                           Text(
                             'Round ${controller.getCurrentRoundNumber()} of ${controller.getTotalRounds()}',
                             style: TextStyle(
@@ -51,9 +57,50 @@ class PlayScreen extends ConsumerWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          // Score display
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Score: $currentScore',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
+                    // Streak indicator
+                    if (currentStreak > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.local_fire_department,
+                              color: Colors.orange,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Streak: $currentStreak',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     // GIF Display
                     Expanded(
                       flex: 3,
@@ -71,7 +118,8 @@ class PlayScreen extends ConsumerWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
                           // Add key with currentRoundIndex to force refresh
-                          child: _buildGifImage(currentRound.gifUrl, currentRoundIndex),
+                          child: _buildGifImage(
+                              currentRound.gifUrl, currentRoundIndex),
                         ),
                       ),
                     ),
@@ -84,7 +132,13 @@ class PlayScreen extends ConsumerWidget {
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
                         children: currentRound.options.map((option) {
-                          return _buildAnswerButton(option, controller, currentRoundIndex);
+                          return _buildAnswerButton(
+                            option,
+                            controller,
+                            currentRoundIndex,
+                            selectedAnswer,
+                            currentRound.correctAnswer,
+                          );
                         }).toList(),
                       ),
                     ),
@@ -106,7 +160,7 @@ class PlayScreen extends ConsumerWidget {
 
   Widget _buildGifImage(String url, int roundIndex) {
     developer.log('Loading GIF from URL: $url for round: $roundIndex');
-    
+
     return Image.network(
       url,
       fit: BoxFit.cover,
@@ -155,26 +209,56 @@ class PlayScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAnswerButton(String option, GameController controller, int roundIndex) {
+  Widget _buildAnswerButton(
+    String option,
+    GameController controller,
+    int roundIndex,
+    String? selectedAnswer,
+    String correctAnswer,
+  ) {
+    // Determine button color based on selection and correctness
+    Color buttonColor = AppTheme.primaryColor.withOpacity(0.8);
+    Color textColor = Colors.white;
+
+    if (selectedAnswer != null) {
+      if (option == correctAnswer) {
+        // Correct answer
+        buttonColor = Colors.green;
+        textColor = Colors.white;
+      } else if (option == selectedAnswer) {
+        // Selected wrong answer
+        buttonColor = Colors.red;
+        textColor = Colors.white;
+      } else {
+        // Other options - fade them out
+        buttonColor = AppTheme.primaryColor.withOpacity(0.4);
+        textColor = Colors.white.withOpacity(0.7);
+      }
+    }
+
     return ElevatedButton(
       // Add roundIndex to the key to force refresh when round changes
       key: ValueKey('button_${option}_$roundIndex'),
-      onPressed: () {
-        developer.log('User selected option: $option for round: $roundIndex');
-        controller.submitAnswer(option);
-      },
+      onPressed: selectedAnswer == null
+          ? () {
+              developer
+                  .log('User selected option: $option for round: $roundIndex');
+              controller.submitAnswer(option);
+            }
+          : null, // Disable buttons after selection
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        backgroundColor: AppTheme.primaryColor.withOpacity(0.8),
+        backgroundColor: buttonColor,
+        disabledBackgroundColor: buttonColor, // Keep the color when disabled
       ),
       child: Text(
         option,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: Colors.white,
+          color: textColor,
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
@@ -224,6 +308,9 @@ class PlayScreen extends ConsumerWidget {
 
   Widget _buildGameCompleteView(
       BuildContext context, GameController controller) {
+    final score = controller.getCurrentScore();
+    final highestStreak = controller.getHighestStreak();
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -246,6 +333,57 @@ class PlayScreen extends ConsumerWidget {
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: Colors.white,
               ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Final Score: $score',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.local_fire_department,
+                    color: Colors.orange,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Highest Streak: $highestStreak',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 32),
         ElevatedButton(
@@ -270,48 +408,168 @@ class PlayScreen extends ConsumerWidget {
   }
 
   Widget _buildGameOverView(BuildContext context, GameController controller) {
+    final score = controller.getCurrentScore();
+    final highestStreak = controller.getHighestStreak();
+    final correctAnswer = controller.getCorrectAnswer();
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          controller.wasLastAnswerCorrect() ? Icons.check_circle : Icons.cancel,
-          size: 80,
-          color: controller.wasLastAnswerCorrect() ? Colors.green : Colors.red,
+        // Animated container with sad face
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.2),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.3),
+                blurRadius: 10,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.sentiment_very_dissatisfied,
+            size: 80,
+            color: Colors.red,
+          ),
         ),
         const SizedBox(height: 24),
-        Text(
-          controller.wasLastAnswerCorrect() ? 'Game Complete!' : 'Game Over!',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+        // Game over text with animated effect
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [Colors.red.shade300, Colors.red.shade600],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            'Game Over!',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
         ),
         const SizedBox(height: 16),
         Text(
-          controller.wasLastAnswerCorrect()
-              ? 'You answered all questions correctly!'
-              : 'Better luck next time!',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.white,
+          'The correct answer was:',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white70,
               ),
-          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        // Highlight the correct answer
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.green, width: 2),
+          ),
+          child: Text(
+            correctAnswer,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        // Score display with improved design
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 40),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.deepPurple.withOpacity(0.6),
+                Colors.blue.withOpacity(0.6),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Final Score: $score',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.local_fire_department,
+                    color: Colors.orange,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Highest Streak: $highestStreak',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 32),
+        // Play Again button with improved design
         ElevatedButton(
           onPressed: controller.resetGame,
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             backgroundColor: AppTheme.primaryColor,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
+            elevation: 5,
           ),
-          child: Text(
-            'Play Again',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.replay, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                'Play Again',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       ],
