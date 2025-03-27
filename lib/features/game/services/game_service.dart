@@ -1,27 +1,56 @@
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:clip_cryptic/core/config/app_config.dart';
 import 'package:clip_cryptic/features/game/models/game_round.dart';
+import 'package:clip_cryptic/features/user/repositories/user_repository.dart';
 
 part 'game_service.g.dart';
 
 class GameService {
   final Dio _dio;
-  // Hardcoded user ID as per requirements
-  static const String _userId = 'ba2bc1a9-475c-4cfb-aab4-2f875a11b80a';
 
   GameService(this._dio);
 
-  Future<List<GameRound>> getUnseenRounds(String userId) async {
+  /// Gets the current user ID from the repository
+  /// Returns the user ID or null if not found (without creating new users)
+  Future<String?> _getUserId(Ref ref) async {
     try {
-      developer.log(
-          'Fetching unseen rounds from: ${AppConfig.apiUrl}/rounds/unseen?userId=$_userId');
+      final userRepoProvider = ref.read(userRepositoryProvider);
+      final user = userRepoProvider.valueOrNull;
+      
+      if (user == null) {
+        developer.log('No user found in repository, NOT creating a new user');
+        return null;
+      }
+      
+      developer.log('Found existing user ID: ${user.id}');
+      return user.id;
+    } catch (e) {
+      developer.log('Error getting user ID: $e');
+      return null;
+    }
+  }
 
-      // Using the hardcoded user ID instead of the passed parameter
+  Future<List<GameRound>> getUnseenRounds(Ref ref) async {
+    try {
+      // First try to get the user ID
+      final userId = await _getUserId(ref);
+      
+      // If no user exists yet, we should NOT create one here
+      // This allows the app initialization process to handle user creation
+      if (userId == null) {
+        developer.log('No user ID available, cannot fetch unseen rounds');
+        throw Exception('User not initialized');
+      }
+      
+      developer.log(
+          'Fetching unseen rounds from: ${AppConfig.apiUrl}/rounds/unseen?userId=$userId');
+
       final response = await _dio.get(
         '${AppConfig.apiUrl}/rounds/unseen',
-        queryParameters: {'userId': _userId},
+        queryParameters: {'userId': userId},
       );
 
       if (response.statusCode != 200) {
@@ -105,26 +134,67 @@ class GameService {
               }
             }
 
-            // Handle correctAnswer format issues
-            if (modifiedRound['correctAnswer'] is String) {
-              modifiedRound['correctAnswer'] =
-                  modifiedRound['correctAnswer'].toString().trim();
-            }
-
             return GameRound.fromJson(modifiedRound);
+          } else {
+            developer.log('Round is not a Map: ${round.runtimeType}');
+            throw Exception('Invalid round data format');
           }
-          return GameRound.fromJson(round);
         } catch (e) {
-          developer.log('Error parsing round: $e');
+          developer.log('Error processing round: $e');
           rethrow;
         }
       }).toList();
 
-      developer.log('Parsed ${rounds.length} rounds successfully');
+      developer.log('Processed ${rounds.length} rounds successfully');
       return rounds;
     } catch (e) {
       developer.log('Error fetching game rounds: $e');
-      throw Exception('Failed to fetch game rounds: $e');
+      rethrow;
+    }
+  }
+  
+  /// Marks a list of GIFs as seen by the user
+  /// Returns true if the operation was successful
+  Future<bool> markGifsAsSeen(List<int> gifIds, Ref ref) async {
+    try {
+      // Get user ID without creating a new user
+      final userId = await _getUserId(ref);
+      
+      // If no user exists, we cannot mark GIFs as seen
+      if (userId == null) {
+        developer.log('No user ID available, cannot mark GIFs as seen');
+        return false;
+      }
+      
+      developer.log('Marking GIFs as seen for user $userId: $gifIds');
+      
+      // Create the payload format as required by the API
+      final List<Map<String, dynamic>> markSeen = 
+          gifIds.map((id) => {'gifId': id}).toList();
+      
+      final payload = {
+        'userId': userId,
+        'markSeen': markSeen,
+      };
+      
+      developer.log('Sending payload to mark GIFs as seen: $payload');
+      
+      final response = await _dio.post(
+        '${AppConfig.apiUrl}/rounds/mark-seen',
+        data: payload,
+      );
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        developer.log('Successfully marked GIFs as seen');
+        return true;
+      } else {
+        developer.log('Failed to mark GIFs as seen: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      developer.log('Error marking GIFs as seen: $e');
+      // Don't throw the error, just return false to indicate failure
+      return false;
     }
   }
 }

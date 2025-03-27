@@ -30,7 +30,7 @@ class PlayScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (gameStatus == GameStatus.initial) ...[
-              _buildStartButton(context, controller),
+              _buildStartButton(context, controller, ref),
             ] else if (gameStatus == GameStatus.loading) ...[
               Center(
                 child: CircularProgressIndicator(
@@ -266,7 +266,8 @@ class PlayScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStartButton(BuildContext context, GameController controller) {
+  Widget _buildStartButton(
+      BuildContext context, GameController controller, WidgetRef ref) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -371,7 +372,10 @@ class PlayScreen extends ConsumerWidget {
                   size: 64,
                   color: Colors.white,
                 ),
-                onPressed: controller.startGame,
+                onPressed: () {
+                  // Simply start the game - user creation is handled by the welcome screen
+                  controller.startGame();
+                },
               ),
             ),
           ),
@@ -575,7 +579,7 @@ class PlayScreen extends ConsumerWidget {
           Text(
             'The correct answer was:',
             style: TextStyle(
-              color: Colors.white,
+              color: Colors.red.shade600,
               fontSize: 18,
             ),
           ),

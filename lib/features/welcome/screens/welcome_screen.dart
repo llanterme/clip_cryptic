@@ -85,7 +85,7 @@ class WelcomeScreen extends ConsumerWidget {
                                 duration: Duration(seconds: 2),
                               ),
                             );
-                            
+
                             try {
                               await ref
                                   .read(userRepositoryProvider.notifier)
