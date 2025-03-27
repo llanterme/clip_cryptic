@@ -42,11 +42,12 @@ class GameController extends _$GameController {
       // Get current user from the AsyncValue provider
       final userProvider = ref.read(userRepositoryProvider);
       final user = userProvider.valueOrNull;
-      
+
       if (user == null) {
         // We should NOT create a new user here - that's handled by the welcome screen
         // If we get here with no user, it's an error
-        developer.log('Error: No user found in repository. User should be created on welcome screen.');
+        developer.log(
+            'Error: No user found in repository. User should be created on welcome screen.');
         return false;
       } else {
         developer.log('Using existing user ID: ${user.id}');
@@ -68,7 +69,7 @@ class GameController extends _$GameController {
         state = GameStatus.error;
         return;
       }
-      
+
       final gameService = ref.read(gameServiceProvider);
       // Pass the ref to the service method
       _rounds = await gameService.getUnseenRounds(ref);
@@ -184,6 +185,7 @@ class GameController extends _$GameController {
       // Short delay to show the wrong/correct answers before game over
       Future.delayed(const Duration(milliseconds: 800), () {
         state = GameStatus.gameOver;
+        _saveHighScore();
       });
     }
   }
@@ -196,6 +198,7 @@ class GameController extends _$GameController {
     if (_currentRoundIndex >= _rounds.length) {
       developer.log('Game complete! No more rounds.');
       state = GameStatus.gameComplete;
+      _saveHighScore();
     } else {
       // Force UI refresh by setting state to a temporary value and then back
       state = GameStatus.loading;
@@ -258,16 +261,32 @@ class GameController extends _$GameController {
     return _seenGifIds.toList();
   }
 
+  /// Save the current score and streak as a high score
+  Future<void> _saveHighScore() async {
+    if (_currentScore > 0) {
+      try {
+        developer.log(
+            'Saving score: $_currentScore, highest streak: $_highestStreak');
+        await ref
+            .read(highScoresProvider.notifier)
+            .addScore(_currentScore, _highestStreak);
+      } catch (e) {
+        developer.log('Error saving score: $e');
+      }
+    }
+  }
+
   // Mark all seen GIFs on the server and reset the game
   Future<void> resetGame() async {
     // If we have seen GIFs, mark them on the server
     if (_seenGifIds.isNotEmpty) {
       developer.log('Marking ${_seenGifIds.length} GIFs as seen: $_seenGifIds');
-      
+
       try {
         final gameService = ref.read(gameServiceProvider);
-        final success = await gameService.markGifsAsSeen(_seenGifIds.toList(), ref);
-        
+        final success =
+            await gameService.markGifsAsSeen(_seenGifIds.toList(), ref);
+
         if (success) {
           developer.log('Successfully marked GIFs as seen on the server');
         } else {
@@ -278,18 +297,7 @@ class GameController extends _$GameController {
       }
     }
 
-    // Save the score if the game has been played
-    if (state == GameStatus.gameOver || state == GameStatus.gameComplete) {
-      if (_currentScore > 0) {
-        try {
-          developer.log('Saving score: $_currentScore, highest streak: $_highestStreak');
-          // Use the StateNotifier to add the score and update the UI immediately
-          await ref.read(highScoresProvider.notifier).addScore(_currentScore, _highestStreak);
-        } catch (e) {
-          developer.log('Error saving score: $e');
-        }
-      }
-    }
+    // Score saving has been moved to when the game ends (GameOver or GameComplete states)
 
     // Reset game state
     _rounds = [];
@@ -301,9 +309,9 @@ class GameController extends _$GameController {
     _selectedAnswer = null;
     _lastRound = null;
     state = GameStatus.initial;
-    
+
     // Do not clear _seenGifIds since we want to maintain the history across games
-    
+
     // Automatically start a new game after a short delay
     Future.delayed(const Duration(milliseconds: 300), () {
       startGame();
