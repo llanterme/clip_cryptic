@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:clip_cryptic/features/game/models/game_round.dart';
 import 'package:clip_cryptic/features/game/services/game_service.dart';
 import 'package:clip_cryptic/features/user/repositories/user_repository.dart';
+import 'package:clip_cryptic/features/scores/providers/scores_repository_provider.dart';
 
 part 'game_controller.g.dart';
 
@@ -262,12 +263,11 @@ class GameController extends _$GameController {
     // If we have seen GIFs, mark them on the server
     if (_seenGifIds.isNotEmpty) {
       developer.log('Marking ${_seenGifIds.length} GIFs as seen: $_seenGifIds');
-
+      
       try {
         final gameService = ref.read(gameServiceProvider);
-        final success =
-            await gameService.markGifsAsSeen(_seenGifIds.toList(), ref);
-
+        final success = await gameService.markGifsAsSeen(_seenGifIds.toList(), ref);
+        
         if (success) {
           developer.log('Successfully marked GIFs as seen on the server');
         } else {
@@ -275,6 +275,19 @@ class GameController extends _$GameController {
         }
       } catch (e) {
         developer.log('Error marking GIFs as seen: $e');
+      }
+    }
+
+    // Save the score if the game has been played
+    if (state == GameStatus.gameOver || state == GameStatus.gameComplete) {
+      if (_currentScore > 0) {
+        try {
+          developer.log('Saving score: $_currentScore, highest streak: $_highestStreak');
+          // Use the StateNotifier to add the score and update the UI immediately
+          await ref.read(highScoresProvider.notifier).addScore(_currentScore, _highestStreak);
+        } catch (e) {
+          developer.log('Error saving score: $e');
+        }
       }
     }
 
@@ -288,9 +301,9 @@ class GameController extends _$GameController {
     _selectedAnswer = null;
     _lastRound = null;
     state = GameStatus.initial;
-
+    
     // Do not clear _seenGifIds since we want to maintain the history across games
-
+    
     // Automatically start a new game after a short delay
     Future.delayed(const Duration(milliseconds: 300), () {
       startGame();

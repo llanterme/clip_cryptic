@@ -42,6 +42,7 @@ dependencies:
   # Utilities
   json_annotation: ^4.8.1
   freezed_annotation: ^2.4.1
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
