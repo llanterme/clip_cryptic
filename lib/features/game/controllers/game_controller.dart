@@ -17,6 +17,7 @@ enum GameStatus {
 
 @riverpod
 class GameController extends _$GameController {
+  GameRound? _lastRound;
   List<GameRound> _rounds = [];
   int _currentRoundIndex = 0;
   bool _lastAnswerCorrect = false;
@@ -45,6 +46,7 @@ class GameController extends _$GameController {
       _currentStreak = 0;
       _highestStreak = 0;
       _selectedAnswer = null;
+      _lastRound = null;
       
       if (_rounds.isEmpty) {
         developer.log('No rounds available');
@@ -72,87 +74,73 @@ class GameController extends _$GameController {
   }
 
   void submitAnswer(String answer) {
-    final currentRound = getCurrentRound();
-    if (currentRound == null) {
-      developer.log('No current round available');
-      return;
-    }
+    if (state != GameStatus.playing) return;
     
-    // Store the selected answer for UI highlighting
+    final currentRound = getCurrentRound();
+    if (currentRound == null) return;
+    
+    // Save the last round before potentially moving to the next one
+    _lastRound = currentRound;
+    
+    // Set the selected answer
     _selectedAnswer = answer;
     
-    // Debug the comparison
-    developer.log('Current round index: $_currentRoundIndex');
-    developer.log('User selected: "$answer"');
-    developer.log('Correct answer: "${currentRound.correctAnswer}"');
-    developer.log('Current round data: ${currentRound.toString()}');
-    developer.log('Options available: ${currentRound.options.join(", ")}');
-    
-    // Check if the selected answer is actually in the options
-    final isOptionValid = currentRound.options.contains(answer);
-    developer.log('Is selected answer in options? $isOptionValid');
-    
-    // Normalize both strings to handle case sensitivity and whitespace issues
+    // Normalize answers for comparison (trim whitespace, convert to lowercase)
     final normalizedAnswer = answer.trim().toLowerCase();
     final normalizedCorrectAnswer = currentRound.correctAnswer.trim().toLowerCase();
     
-    developer.log('Normalized user answer: "$normalizedAnswer"');
-    developer.log('Normalized correct answer: "$normalizedCorrectAnswer"');
-    developer.log('Match? ${normalizedCorrectAnswer == normalizedAnswer}');
-    
-    // Check each option against the correct answer for debugging
-    for (final option in currentRound.options) {
-      final normalizedOption = option.trim().toLowerCase();
-      developer.log('Option: "$option" normalized: "$normalizedOption" matches correct answer? ${normalizedOption == normalizedCorrectAnswer}');
-    }
-    
-    // Direct string comparison with normalization
+    // Check if answer is correct
     if (normalizedCorrectAnswer == normalizedAnswer) {
-      developer.log('CORRECT ANSWER!');
       _lastAnswerCorrect = true;
-      
-      // Update score and streak
       _currentScore += 10;
       _currentStreak++;
+      
+      // Update highest streak if current streak is higher
       if (_currentStreak > _highestStreak) {
         _highestStreak = _currentStreak;
       }
       
-      // Add a short delay to show the correct answer highlight
+      developer.log('Correct answer! Score: $_currentScore, Streak: $_currentStreak');
+      
+      // Short delay to show the correct answer before moving to next round
       Future.delayed(const Duration(milliseconds: 800), () {
-        // Move to next round
-        _currentRoundIndex++;
-        _selectedAnswer = null;
-        
-        // Check if this was the last round
-        if (_currentRoundIndex >= _rounds.length) {
-          developer.log('Game complete! No more rounds.');
-          state = GameStatus.gameComplete;
-        } else {
-          // Force UI refresh by setting state to a temporary value and then back
-          state = GameStatus.loading;
-          
-          // Use a short delay to ensure the UI updates
-          Future.delayed(const Duration(milliseconds: 100), () {
-            state = GameStatus.playing;
-            
-            // Debug the next round
-            final nextRound = _rounds[_currentRoundIndex];
-            developer.log('Next round: gifId=${nextRound.gifId}');
-            developer.log('Options: ${nextRound.options.join(", ")}');
-            developer.log('Correct answer: "${nextRound.correctAnswer}"');
-          });
-        }
+        _moveToNextRound();
       });
     } else {
-      // Game over on wrong answer
-      developer.log('WRONG ANSWER!');
+      // Wrong answer
       _lastAnswerCorrect = false;
       _currentStreak = 0;
       
-      // Add a short delay to show the wrong answer highlight
+      developer.log('Wrong answer! Correct was: ${currentRound.correctAnswer}');
+      
+      // Short delay to show the wrong/correct answers before game over
       Future.delayed(const Duration(milliseconds: 800), () {
         state = GameStatus.gameOver;
+      });
+    }
+  }
+
+  void _moveToNextRound() {
+    _currentRoundIndex++;
+    _selectedAnswer = null;
+    
+    // Check if this was the last round
+    if (_currentRoundIndex >= _rounds.length) {
+      developer.log('Game complete! No more rounds.');
+      state = GameStatus.gameComplete;
+    } else {
+      // Force UI refresh by setting state to a temporary value and then back
+      state = GameStatus.loading;
+      
+      // Use a short delay to ensure the UI updates
+      Future.delayed(const Duration(milliseconds: 100), () {
+        state = GameStatus.playing;
+        
+        // Debug the next round
+        final nextRound = _rounds[_currentRoundIndex];
+        developer.log('Next round: gifId=${nextRound.gifId}');
+        developer.log('Options: ${nextRound.options.join(", ")}');
+        developer.log('Correct answer: "${nextRound.correctAnswer}"');
       });
     }
   }
@@ -186,6 +174,12 @@ class GameController extends _$GameController {
   }
   
   String getCorrectAnswer() {
+    // If we have a saved last round, use that
+    if (_lastRound != null) {
+      return _lastRound!.correctAnswer;
+    }
+    
+    // Otherwise try to get from current round
     final currentRound = getCurrentRound();
     if (currentRound == null) return "";
     return currentRound.correctAnswer;
@@ -199,6 +193,7 @@ class GameController extends _$GameController {
     _currentStreak = 0;
     _highestStreak = 0;
     _selectedAnswer = null;
+    _lastRound = null;
     state = GameStatus.initial;
     
     // Automatically start a new game after a short delay

@@ -267,42 +267,154 @@ class PlayScreen extends ConsumerWidget {
   }
 
   Widget _buildStartButton(BuildContext context, GameController controller) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.primaryColor.withOpacity(0.8),
-                AppTheme.secondaryColor.withOpacity(0.8),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 40),
+          // Movie-themed logo design
+          Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Film reel icon
+                  Icon(
+                    Icons.movie,
+                    size: 40,
+                    color: Colors.amber,
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.purple.shade400,
+                          Colors.blue.shade500,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    child: Text(
+                      'Movie GIF Quiz',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Tagline
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Can you guess the movie?',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 36),
+          // Play button with gradient and animation
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                )
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: IconButton(
-            icon: Icon(
-              Icons.play_circle_outline,
-              size: 64,
-              color: Colors.white,
-            ),
-            onPressed: controller.startGame,
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Start New Game',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Test your movie knowledge!',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[600],
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.primaryColor,
+                    AppTheme.secondaryColor,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
               ),
-        ),
-      ],
+              child: IconButton(
+                iconSize: 64,
+                icon: const Icon(
+                  Icons.play_arrow_rounded,
+                  size: 64,
+                  color: Colors.white,
+                ),
+                onPressed: controller.startGame,
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          // Game description
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Test Your Movie Knowledge',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Identify movies from animated GIFs',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 
@@ -412,6 +524,10 @@ class PlayScreen extends ConsumerWidget {
     final highestStreak = controller.getHighestStreak();
     final correctAnswer = controller.getCorrectAnswer();
 
+    // Log for debugging
+    developer
+        .log('Building Game Over screen with correct answer: "$correctAnswer"');
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -452,30 +568,36 @@ class PlayScreen extends ConsumerWidget {
                 ),
           ),
         ),
-        const SizedBox(height: 16),
-        Text(
-          'The correct answer was:',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white70,
+        const SizedBox(height: 24),
+
+        // Clear display for correct answer
+        if (correctAnswer.isNotEmpty) ...[
+          Text(
+            'The correct answer was:',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.green, width: 2),
+            ),
+            child: Text(
+              correctAnswer,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
-        ),
-        const SizedBox(height: 8),
-        // Highlight the correct answer
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.green, width: 2),
+            ),
           ),
-          child: Text(
-            correctAnswer,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-        ),
+        ],
+
         const SizedBox(height: 24),
         // Score display with improved design
         Container(
