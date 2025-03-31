@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - ClipCryptic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6C63FF;
+            --secondary-color: #00BFA6;
+            --accent-color: #FF6584;
+            --dark-purple: #4B45B2;
+            --light-purple: #8B84FF;
+            --text-color: #FFFFFF;
+            --background-dark: #121212;
+            --background-light: #1E1E1E;
+            --card-bg: rgba(30, 30, 30, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-dark);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.2) 0%, rgba(0, 191, 166, 0.2) 100%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            padding: 2rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, var(--dark-purple), var(--primary-color));
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(108, 99, 255, 0.3);
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: translateY(-5px);
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #FFD700;
+            margin-right: 15px;
+        }
+
+        .logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 2.2rem;
+            background: linear-gradient(to right, #FFFFFF, #E0E0FF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .privacy-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 3rem;
+            margin: 2rem 0 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.8rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        ul {
+            margin-bottom: 1.5rem;
+            padding-left: 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .highlight {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .last-updated {
+            text-align: center;
+            margin-top: 3rem;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-purple));
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(108, 99, 255, 0.4);
+        }
+
+        .back-button i {
+            margin-right: 8px;
+        }
+
+        footer {
+            background-color: var(--background-light);
+            padding: 2rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            margin: 1rem 0;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--primary-color);
+        }
+
+        .copyright {
+            margin-top: 1rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .privacy-content {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    
+    <header>
+        <div class="container">
+            <div class="logo-container">
+                <a href="index.html" class="logo">
+                    <i class="fas fa-film"></i>
+                    <div class="logo-text">ClipCryptic</div>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="privacy-content">
+            <h1>Privacy Policy</h1>
+            
+            <p>Last Updated: March 31, 2025</p>
+            
+            <p>Welcome to ClipCryptic ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you have a positive experience when using our movie GIF quiz game. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.</p>
+            
+            <h2>Information We Collect</h2>
+            
+            <p>We collect the following types of information:</p>
+            
+            <ul>
+                <li><span class="highlight">User-Generated Information:</span> When you create an account, we generate a unique user identifier that helps us track your game progress, scores, and achievements.</li>
+                <li><span class="highlight">Game Activity:</span> We collect information about how you interact with the app, including your game scores, answer selections, completion rates, and time spent playing.</li>
+                <li><span class="highlight">Device Information:</span> We automatically collect certain information about your device, including your mobile device ID, model and manufacturer, operating system, and screen resolution.</li>
+                <li><span class="highlight">Log Data:</span> Our servers automatically record information that your device sends whenever you use our app, such as your IP address, app crashes, and system activity.</li>
+            </ul>
+            
+            <h2>How We Use Your Information</h2>
+            
+            <p>We use the information we collect to:</p>
+            
+            <ul>
+                <li>Provide, maintain, and improve our services</li>
+                <li>Track your progress and display your scores on leaderboards</li>
+                <li>Analyze usage patterns to enhance user experience</li>
+                <li>Troubleshoot technical issues and ensure app stability</li>
+                <li>Communicate with you about updates, new features, or promotional offers (if you opt in)</li>
+            </ul>
+            
+            <h2>Data Storage and Security</h2>
+            
+            <p>Your game data is stored securely on our servers and on your local device. We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, accidental loss, or destruction.</p>
+            
+            <h2>Sharing Your Information</h2>
+            
+            <p>We do not sell your personal information to third parties. We may share non-personally identifiable, aggregated information for analytics purposes. Your username and scores may be visible to other users on leaderboards, but this can be adjusted in your privacy settings.</p>
+            
+            <h2>Your Choices</h2>
+            
+            <p>You can:</p>
+            
+            <ul>
+                <li>Opt out of appearing on public leaderboards through the app settings</li>
+                <li>Delete your user data from our servers through the settings menu</li>
+                <li>Disable notifications in your device settings or within the app</li>
+            </ul>
+            
+            <h2>Children's Privacy</h2>
+            
+            <p>ClipCryptic is not directed to children under the age of 13, and we do not knowingly collect personal information from children under 13. If we discover that a child under 13 has provided us with personal information, we will promptly delete such information.</p>
+            
+            <h2>Changes to This Privacy Policy</h2>
+            
+            <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date. You are advised to review this Privacy Policy periodically for any changes.</p>
+            
+            <h2>Contact Us</h2>
+            
+            <p>If you have any questions about this Privacy Policy or our data practices, please contact us at:</p>
+            
+            <p>privacy@clipcryptic.com</p>
+            
+            <div class="last-updated">
+                This policy was last updated on March 31, 2025
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="index.html" class="back-button">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">ClipCryptic</div>
+                <div class="footer-links">
+                    <a href="index.html" class="footer-link">Home</a>
+                    <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                    <a href="#" class="footer-link">Terms of Service</a>
+                    <a href="#" class="footer-link">Contact Us</a>
+                </div>
+                <p class="copyright">© 2025 ClipCryptic. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

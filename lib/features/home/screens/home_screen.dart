@@ -41,11 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedIcon: Icon(Icons.emoji_events),
             label: 'Scores',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+          // NavigationDestination(
+          //   icon: Icon(Icons.settings_outlined),
+          //   selectedIcon: Icon(Icons.settings),
+          //   label: 'Settings',
+          // ),
         ],
       ),
     );

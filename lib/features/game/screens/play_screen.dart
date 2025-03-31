@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:clip_cryptic/core/theme/app_theme.dart';
 import 'package:clip_cryptic/core/widgets/animated_background.dart';
 import 'package:clip_cryptic/features/game/controllers/game_controller.dart';
@@ -367,11 +368,12 @@ class PlayScreen extends ConsumerWidget {
                   SizedBox(height: 4),
                 ],
                 Flexible(
-                  child: Text(
+                  child: AutoSizeText(
                     option,
                     textAlign: TextAlign.center,
+                    maxLines: 3,
+                    minFontSize: 10,
                     overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
                     style: TextStyle(
                       color: textColor,
                       fontSize: 14,
