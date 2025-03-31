@@ -706,36 +706,215 @@ class PlayScreen extends ConsumerWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.error_outline,
-          size: 64,
-          color: Colors.red,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Oops! Something went wrong',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
+        // Error animation container with shadow
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.3),
+                blurRadius: 15,
+                spreadRadius: 5,
               ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Failed to load game data',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white70,
-              ),
+            ],
+          ),
+          child: Icon(
+            Icons.cloud_off,
+            size: 64,
+            color: Colors.red,
+          ),
         ),
         const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: controller.startGame,
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            backgroundColor: AppTheme.primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        // Error title with gradient effect
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [Colors.red.shade300, Colors.red.shade600],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            'Connection Error',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Detailed error message
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.red.withOpacity(0.3),
+              width: 1,
             ),
           ),
-          child: Text('Try Again'),
+          child: Column(
+            children: [
+              Text(
+                'Unable to connect to the game server',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'The server might be temporarily unavailable or your internet connection may be down.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        // Troubleshooting tips
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.blue.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  'Troubleshooting Tips:',
+                  style: TextStyle(
+                    color: Colors.blue.shade300,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildTroubleshootingItem(
+                Icons.wifi_off,
+                'Check your internet connection',
+              ),
+              const SizedBox(height: 4),
+              _buildTroubleshootingItem(
+                Icons.refresh,
+                'Try again in a few moments',
+              ),
+              const SizedBox(height: 4),
+              _buildTroubleshootingItem(
+                Icons.settings,
+                'Restart the app if the problem persists',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        // Action buttons
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Try Again button
+            ElevatedButton(
+              onPressed: controller.startGame,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                backgroundColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 3,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.refresh, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Try Again',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Go Home button
+            OutlinedButton(
+              onPressed: () {
+                // Navigate back to home screen
+                controller.resetGame();
+                // Use context.go if you're using go_router
+                // context.go('/');
+              },
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                side: BorderSide(color: Colors.white70),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.home, color: Colors.white70),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Go Home',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Helper method for troubleshooting items
+  Widget _buildTroubleshootingItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: Colors.blue.shade200,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: Colors.blue,
+              fontSize: 14,
+            ),
+          ),
         ),
       ],
     );
