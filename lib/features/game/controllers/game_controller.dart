@@ -29,8 +29,8 @@ class GameController extends _$GameController {
   String? _selectedAnswer;
   final _random = math.Random();
 
-  // Hint system
-  int _hintsRemainingForRound = 2; // Maximum 2 hints per round
+  // Hint system - changed to be per game instead of per round
+  int _hintsRemainingForGame = 2; // Maximum 2 hints per game
   List<String> _eliminatedOptions = []; // Track which options have been eliminated by hints
 
   // Track seen GIFs to avoid repetition
@@ -39,9 +39,6 @@ class GameController extends _$GameController {
   // Track recently played GIFs to avoid showing the same ones in consecutive games
   // Map of GIF ID to count of recent appearances
   Map<int, int> _recentlyPlayedGifs = {};
-
-  // Maximum number of times a GIF can appear in recent games before being deprioritized
-  static const int _maxRecentAppearances = 2;
 
   @override
   GameStatus build() => GameStatus.initial;
@@ -95,8 +92,11 @@ class GameController extends _$GameController {
       _highestStreak = 0;
       _selectedAnswer = null;
       _lastRound = null;
-      _hintsRemainingForRound = 2; // Reset hints for new game
+      _hintsRemainingForGame = 2; // Reset hints for new game
       _eliminatedOptions = []; // Clear eliminated options
+
+      // Clean up old entries in _recentlyPlayedGifs to prevent the map from growing too large
+      _cleanupRecentlyPlayedGifs();
 
       // We don't clear _seenGifIds here to maintain the list across games
 
@@ -248,6 +248,8 @@ class GameController extends _$GameController {
       // Wrong answer
       _lastAnswerCorrect = false;
       _currentStreak = 0;
+      _hintsRemainingForGame = 2; // Reset hints for next round
+      _eliminatedOptions = []; // Clear eliminated options
 
       developer.log('Wrong answer! Correct was: ${currentRound.correctAnswer}');
 
@@ -262,8 +264,8 @@ class GameController extends _$GameController {
   void _moveToNextRound() {
     _currentRoundIndex++;
     _selectedAnswer = null;
-    _hintsRemainingForRound = 2; // Reset hints for new round
-    _eliminatedOptions = []; // Clear eliminated options
+    _eliminatedOptions = []; // Clear eliminated options for the new round
+    // Don't reset hints - they're now per game
 
     // Check if this was the last round
     if (_currentRoundIndex >= _rounds.length) {
@@ -392,31 +394,29 @@ class GameController extends _$GameController {
     });
   }
 
-  // Clean up the recently played GIFs map to prevent it from growing too large
+  /// Cleans up old entries in the _recentlyPlayedGifs map
+  /// to prevent it from growing too large over time
   void _cleanupRecentlyPlayedGifs() {
-    // Remove GIFs that have reached the maximum appearance count
-    _recentlyPlayedGifs
-        .removeWhere((gifId, count) => count >= _maxRecentAppearances);
-
-    // If the map is still too large, keep only the most recent entries
-    const int maxRecentGifsToTrack = 50;
-    if (_recentlyPlayedGifs.length > maxRecentGifsToTrack) {
-      // Sort by count (descending)
+    // If we have more than 100 entries, remove the oldest ones
+    if (_recentlyPlayedGifs.length > 100) {
+      // Sort by count (ascending) and take only the top 50
       final sortedEntries = _recentlyPlayedGifs.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-
-      // Create a new map with only the top entries
+        ..sort((a, b) => a.value.compareTo(b.value));
+      
+      // Keep only the most frequently played 50 GIFs
       _recentlyPlayedGifs = Map.fromEntries(
-        sortedEntries.take(maxRecentGifsToTrack),
+        sortedEntries.skip(sortedEntries.length - 50),
       );
+      
+      developer.log('Cleaned up _recentlyPlayedGifs, now has ${_recentlyPlayedGifs.length} entries');
     }
   }
 
   // Hint system methods
   
-  /// Returns the number of hints remaining for the current round
+  /// Returns the number of hints remaining for the game
   int getHintsRemaining() {
-    return _hintsRemainingForRound;
+    return _hintsRemainingForGame;
   }
   
   /// Returns the list of options that have been eliminated by hints
@@ -427,10 +427,10 @@ class GameController extends _$GameController {
   /// Uses a hint to eliminate two incorrect options
   /// Returns true if hint was successfully used, false if no hints remaining
   bool useHint() {
-    developer.log('useHint called. Hints remaining: $_hintsRemainingForRound, Game status: $state, Selected answer: $_selectedAnswer');
+    developer.log('useHint called. Hints remaining: $_hintsRemainingForGame, Game status: $state, Selected answer: $_selectedAnswer');
     
-    if (_hintsRemainingForRound <= 0 || state != GameStatus.playing || _selectedAnswer != null) {
-      developer.log('Cannot use hint: hints remaining: $_hintsRemainingForRound, game status: $state, selected answer: $_selectedAnswer');
+    if (_hintsRemainingForGame <= 0 || state != GameStatus.playing || _selectedAnswer != null) {
+      developer.log('Cannot use hint: hints remaining: $_hintsRemainingForGame, game status: $state, selected answer: $_selectedAnswer');
       return false;
     }
     
@@ -467,9 +467,9 @@ class GameController extends _$GameController {
     }
     
     // Decrement available hints
-    _hintsRemainingForRound--;
+    _hintsRemainingForGame--;
     
-    developer.log('Hint used successfully. Hints remaining: $_hintsRemainingForRound, Eliminated options: $_eliminatedOptions');
+    developer.log('Hint used successfully. Hints remaining: $_hintsRemainingForGame, Eliminated options: $_eliminatedOptions');
     
     // Force a rebuild by setting state to itself with a new instance
     // This is necessary to trigger UI updates for the eliminated options
