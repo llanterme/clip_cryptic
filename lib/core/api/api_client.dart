@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../config/app_config.dart';
 
 part 'api_client.g.dart';
 
@@ -8,7 +10,8 @@ class ApiClient {
 
   ApiClient(this._dio);
 
-  static const String baseUrl = 'http://localhost:8080/api';
+  // Use AppConfig instead of hardcoded value
+  static String get baseUrl => AppConfig.apiUrl;
 
   Future<Response<T>> get<T>(
     String path, {
@@ -48,10 +51,11 @@ class ApiClient {
 }
 
 @riverpod
-ApiClient apiClient(ApiClientRef ref) {
+ApiClient apiClient(Ref ref) {
   final dio = Dio(BaseOptions(
     baseUrl: ApiClient.baseUrl,
     connectTimeout: const Duration(seconds: 5),
+    sendTimeout: const Duration(seconds: 5),
     receiveTimeout: const Duration(seconds: 3),
   ));
 

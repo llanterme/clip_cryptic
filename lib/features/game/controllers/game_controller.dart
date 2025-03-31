@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:clip_cryptic/features/game/models/game_round.dart';
 import 'package:clip_cryptic/features/game/services/game_service.dart';
 import 'package:clip_cryptic/features/user/repositories/user_repository.dart';
+import 'package:clip_cryptic/features/scores/providers/scores_repository_provider.dart';
 
 part 'game_controller.g.dart';
 
@@ -31,6 +32,13 @@ class GameController extends _$GameController {
   // Track seen GIFs to avoid repetition
   Set<int> _seenGifIds = {};
 
+  // Track recently played GIFs to avoid showing the same ones in consecutive games
+  // Map of GIF ID to count of recent appearances
+  Map<int, int> _recentlyPlayedGifs = {};
+
+  // Maximum number of times a GIF can appear in recent games before being deprioritized
+  static const int _maxRecentAppearances = 2;
+
   @override
   GameStatus build() => GameStatus.initial;
 
@@ -41,11 +49,12 @@ class GameController extends _$GameController {
       // Get current user from the AsyncValue provider
       final userProvider = ref.read(userRepositoryProvider);
       final user = userProvider.valueOrNull;
-      
+
       if (user == null) {
         // We should NOT create a new user here - that's handled by the welcome screen
         // If we get here with no user, it's an error
-        developer.log('Error: No user found in repository. User should be created on welcome screen.');
+        developer.log(
+            'Error: No user found in repository. User should be created on welcome screen.');
         return false;
       } else {
         developer.log('Using existing user ID: ${user.id}');
@@ -67,7 +76,7 @@ class GameController extends _$GameController {
         state = GameStatus.error;
         return;
       }
-      
+
       final gameService = ref.read(gameServiceProvider);
       // Pass the ref to the service method
       _rounds = await gameService.getUnseenRounds(ref);
@@ -103,22 +112,47 @@ class GameController extends _$GameController {
     }
   }
 
-  // Fisher-Yates shuffle algorithm to randomize rounds
+  // Enhanced Fisher-Yates shuffle algorithm with weighted randomization
+  // This ensures better variety by deprioritizing recently seen GIFs
   void _shuffleRounds() {
-    developer.log('Shuffling ${_rounds.length} rounds');
+    developer
+        .log('Shuffling ${_rounds.length} rounds with enhanced randomization');
 
     // Create a copy of the original list to log the order change
     final originalOrder = List<int>.from(_rounds.map((r) => r.gifId));
 
+    // First, assign weights to each round based on how recently they've been played
+    final weights = <double>[];
+
+    for (var round in _rounds) {
+      // Default weight is 1.0 (normal priority)
+      double weight = 1.0;
+
+      // If this GIF has been played recently, reduce its weight
+      if (_recentlyPlayedGifs.containsKey(round.gifId)) {
+        final appearances = _recentlyPlayedGifs[round.gifId] ?? 0;
+        // Exponentially decrease weight based on number of recent appearances
+        weight = 1.0 / (appearances + 1);
+      }
+
+      weights.add(weight);
+    }
+
+    // Perform weighted shuffle
     for (int i = _rounds.length - 1; i > 0; i--) {
-      // Generate a random index between 0 and i
-      int j = _random.nextInt(i + 1);
+      // Use weighted random selection for better variety
+      int j = _getWeightedRandomIndex(i + 1, weights.sublist(0, i + 1));
 
       // Swap elements at i and j
       if (i != j) {
         GameRound temp = _rounds[i];
         _rounds[i] = _rounds[j];
         _rounds[j] = temp;
+
+        // Also swap their weights
+        double tempWeight = weights[i];
+        weights[i] = weights[j];
+        weights[j] = tempWeight;
       }
     }
 
@@ -126,6 +160,30 @@ class GameController extends _$GameController {
     final newOrder = List<int>.from(_rounds.map((r) => r.gifId));
     developer.log('Original order: $originalOrder');
     developer.log('New shuffled order: $newOrder');
+  }
+
+  // Get a random index with weighting applied
+  int _getWeightedRandomIndex(int max, List<double> weights) {
+    // Calculate total weight
+    double totalWeight = 0;
+    for (int i = 0; i < max; i++) {
+      totalWeight += weights[i];
+    }
+
+    // Get a random value between 0 and totalWeight
+    double randomValue = _random.nextDouble() * totalWeight;
+
+    // Find the index corresponding to this random value
+    double cumulativeWeight = 0;
+    for (int i = 0; i < max; i++) {
+      cumulativeWeight += weights[i];
+      if (randomValue <= cumulativeWeight) {
+        return i;
+      }
+    }
+
+    // Fallback to simple random if something goes wrong
+    return _random.nextInt(max);
   }
 
   GameRound? getCurrentRound() {
@@ -146,6 +204,13 @@ class GameController extends _$GameController {
 
     // Add current GIF ID to seen list
     _seenGifIds.add(currentRound.gifId);
+
+    // Update recently played GIFs counter
+    _recentlyPlayedGifs.update(
+      currentRound.gifId,
+      (count) => count + 1,
+      ifAbsent: () => 1,
+    );
 
     // Set the selected answer
     _selectedAnswer = answer;
@@ -183,6 +248,7 @@ class GameController extends _$GameController {
       // Short delay to show the wrong/correct answers before game over
       Future.delayed(const Duration(milliseconds: 800), () {
         state = GameStatus.gameOver;
+        _saveHighScore();
       });
     }
   }
@@ -195,6 +261,7 @@ class GameController extends _$GameController {
     if (_currentRoundIndex >= _rounds.length) {
       developer.log('Game complete! No more rounds.');
       state = GameStatus.gameComplete;
+      _saveHighScore();
     } else {
       // Force UI refresh by setting state to a temporary value and then back
       state = GameStatus.loading;
@@ -257,6 +324,21 @@ class GameController extends _$GameController {
     return _seenGifIds.toList();
   }
 
+  /// Save the current score and streak as a high score
+  Future<void> _saveHighScore() async {
+    if (_currentScore > 0) {
+      try {
+        developer.log(
+            'Saving score: $_currentScore, highest streak: $_highestStreak');
+        await ref
+            .read(highScoresProvider.notifier)
+            .addScore(_currentScore, _highestStreak);
+      } catch (e) {
+        developer.log('Error saving score: $e');
+      }
+    }
+  }
+
   // Mark all seen GIFs on the server and reset the game
   Future<void> resetGame() async {
     // If we have seen GIFs, mark them on the server
@@ -278,6 +360,8 @@ class GameController extends _$GameController {
       }
     }
 
+    // Score saving has been moved to when the game ends (GameOver or GameComplete states)
+
     // Reset game state
     _rounds = [];
     _currentRoundIndex = 0;
@@ -291,9 +375,32 @@ class GameController extends _$GameController {
 
     // Do not clear _seenGifIds since we want to maintain the history across games
 
+    // Clean up old entries in _recentlyPlayedGifs to prevent the map from growing too large
+    _cleanupRecentlyPlayedGifs();
+
     // Automatically start a new game after a short delay
     Future.delayed(const Duration(milliseconds: 300), () {
       startGame();
     });
+  }
+
+  // Clean up the recently played GIFs map to prevent it from growing too large
+  void _cleanupRecentlyPlayedGifs() {
+    // Remove GIFs that have reached the maximum appearance count
+    _recentlyPlayedGifs
+        .removeWhere((gifId, count) => count >= _maxRecentAppearances);
+
+    // If the map is still too large, keep only the most recent entries
+    const int maxRecentGifsToTrack = 50;
+    if (_recentlyPlayedGifs.length > maxRecentGifsToTrack) {
+      // Sort by count (descending)
+      final sortedEntries = _recentlyPlayedGifs.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      // Create a new map with only the top entries
+      _recentlyPlayedGifs = Map.fromEntries(
+        sortedEntries.take(maxRecentGifsToTrack),
+      );
+    }
   }
 }
