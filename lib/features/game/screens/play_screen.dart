@@ -123,14 +123,66 @@ class PlayScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
+                    // Answer Options Header
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.purple.shade500.withOpacity(0.8),
+                              Colors.blue.shade500.withOpacity(0.9),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.purple.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          'What movie is this?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 3.0,
+                                color: Colors.black.withOpacity(0.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                     // Answer Options
                     Expanded(
                       flex: 2,
                       child: GridView.count(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio:
+                            1.2, // Adjust for better button proportions
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        physics:
+                            NeverScrollableScrollPhysics(), // Prevent scrolling
                         children: currentRound.options.map((option) {
                           return _buildAnswerButton(
                             option,
@@ -219,48 +271,118 @@ class PlayScreen extends ConsumerWidget {
     // Determine button color based on selection and correctness
     Color buttonColor = AppTheme.primaryColor.withOpacity(0.8);
     Color textColor = Colors.white;
+    bool isSelected = option == selectedAnswer;
+    bool isCorrect = option == correctAnswer;
+    bool showResult = selectedAnswer != null;
 
-    if (selectedAnswer != null) {
-      if (option == correctAnswer) {
-        // Correct answer
-        buttonColor = Colors.green;
+    // Determine icon to show based on selection and correctness
+    Widget? buttonIcon;
+
+    if (showResult) {
+      if (isCorrect) {
+        // Correct answer - vibrant green
+        buttonColor = Colors.green.shade500;
         textColor = Colors.white;
-      } else if (option == selectedAnswer) {
-        // Selected wrong answer
-        buttonColor = Colors.red;
+        buttonIcon = Icon(Icons.check_circle, color: Colors.white, size: 22);
+      } else if (isSelected) {
+        // Selected wrong answer - vibrant red
+        buttonColor = Colors.red.shade500;
         textColor = Colors.white;
+        buttonIcon = Icon(Icons.cancel, color: Colors.white, size: 22);
       } else {
-        // Other options - fade them out
-        buttonColor = AppTheme.primaryColor.withOpacity(0.4);
-        textColor = Colors.white.withOpacity(0.7);
+        // Other options - more vibrant but slightly muted
+        // Instead of grey, use a muted version of the primary/secondary colors
+        buttonColor = Colors.indigo.withOpacity(0.5);
+        textColor = Colors.white.withOpacity(0.9);
       }
+    } else {
+      // Default state with gradient
+      buttonColor = Colors.transparent; // Will use gradient instead
     }
 
-    return ElevatedButton(
-      // Add roundIndex to the key to force refresh when round changes
-      key: ValueKey('button_${option}_$roundIndex'),
-      onPressed: selectedAnswer == null
-          ? () {
-              developer
-                  .log('User selected option: $option for round: $roundIndex');
-              controller.submitAnswer(option);
-            }
-          : null, // Disable buttons after selection
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        gradient: showResult
+            ? (isCorrect || isSelected)
+                ? null
+                : LinearGradient(
+                    colors: [
+                      Colors.indigo.shade400.withOpacity(0.7),
+                      Colors.purple.shade400.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+            : LinearGradient(
+                colors: [
+                  Colors.purple.shade500.withOpacity(0.8),
+                  Colors.blue.shade500.withOpacity(0.9),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        color: buttonColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: showResult && isCorrect
+                ? Colors.green.withOpacity(0.6)
+                : showResult && isSelected
+                    ? Colors.red.withOpacity(0.6)
+                    : Colors.purple.withOpacity(0.3),
+            blurRadius: showResult ? 12 : 8,
+            spreadRadius: showResult ? 2 : 1,
+            offset: Offset(0, 3),
+          ),
+        ],
+        border: Border.all(
+          color: showResult && (isCorrect || isSelected)
+              ? (isCorrect ? Colors.green.shade300 : Colors.red.shade300)
+              : Colors.white.withOpacity(0.3),
+          width: showResult && (isCorrect || isSelected) ? 2 : 1,
         ),
-        backgroundColor: buttonColor,
-        disabledBackgroundColor: buttonColor, // Keep the color when disabled
       ),
-      child: Text(
-        option,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: showResult
+              ? null
+              : () {
+                  developer.log(
+                      'User selected option: $option for round: $roundIndex');
+                  controller.submitAnswer(option);
+                },
+          splashColor: AppTheme.primaryColor.withOpacity(0.3),
+          highlightColor: AppTheme.primaryColor.withOpacity(0.1),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (buttonIcon != null) ...[
+                  buttonIcon,
+                  SizedBox(height: 4),
+                ],
+                Flexible(
+                  child: Text(
+                    option,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
