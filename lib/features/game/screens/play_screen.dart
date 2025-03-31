@@ -195,6 +195,52 @@ class PlayScreen extends ConsumerWidget {
                         }).toList(),
                       ),
                     ),
+                    // Hint button
+                    if (selectedAnswer ==
+                        null) // Only show hint when no answer selected
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            // Get the latest hint count each time the state changes
+                            final controller =
+                                ref.read(gameControllerProvider.notifier);
+                            final hintsRemaining =
+                                controller.getHintsRemaining();
+
+                            return ElevatedButton.icon(
+                              onPressed: hintsRemaining > 0
+                                  ? () {
+                                      developer.log('Hint button pressed');
+                                      controller.useHint();
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: hintsRemaining > 0
+                                    ? Colors.amber.shade600
+                                    : Colors.grey.shade700,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                elevation: hintsRemaining > 0 ? 4 : 1,
+                              ),
+                              icon: Icon(Icons.lightbulb_outline),
+                              label: Text(
+                                hintsRemaining > 0
+                                    ? "Use Hint (${hintsRemaining} left)"
+                                    : "No Hints Left",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -275,6 +321,7 @@ class PlayScreen extends ConsumerWidget {
     bool isSelected = option == selectedAnswer;
     bool isCorrect = option == correctAnswer;
     bool showResult = selectedAnswer != null;
+    bool isEliminated = controller.getEliminatedOptions().contains(option);
 
     // Determine icon to show based on selection and correctness
     Widget? buttonIcon;
@@ -296,6 +343,12 @@ class PlayScreen extends ConsumerWidget {
         buttonColor = Colors.indigo.withOpacity(0.5);
         textColor = Colors.white.withOpacity(0.9);
       }
+    } else if (isEliminated) {
+      // Eliminated by hint - greyed out
+      buttonColor = Colors.grey.shade700.withOpacity(0.5);
+      textColor = Colors.white.withOpacity(0.5);
+      buttonIcon = Icon(Icons.not_interested,
+          color: Colors.white.withOpacity(0.5), size: 22);
     } else {
       // Default state with gradient
       buttonColor = Colors.transparent; // Will use gradient instead
@@ -316,14 +369,23 @@ class PlayScreen extends ConsumerWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
-            : LinearGradient(
-                colors: [
-                  Colors.purple.shade500.withOpacity(0.8),
-                  Colors.blue.shade500.withOpacity(0.9),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+            : isEliminated
+                ? LinearGradient(
+                    colors: [
+                      Colors.grey.shade700.withOpacity(0.5),
+                      Colors.grey.shade800.withOpacity(0.5),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : LinearGradient(
+                    colors: [
+                      Colors.purple.shade500.withOpacity(0.8),
+                      Colors.blue.shade500.withOpacity(0.9),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
         color: buttonColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
@@ -332,7 +394,9 @@ class PlayScreen extends ConsumerWidget {
                 ? Colors.green.withOpacity(0.6)
                 : showResult && isSelected
                     ? Colors.red.withOpacity(0.6)
-                    : Colors.purple.withOpacity(0.3),
+                    : isEliminated
+                        ? Colors.black.withOpacity(0.2)
+                        : Colors.purple.withOpacity(0.3),
             blurRadius: showResult ? 12 : 8,
             spreadRadius: showResult ? 2 : 1,
             offset: Offset(0, 3),
@@ -341,7 +405,9 @@ class PlayScreen extends ConsumerWidget {
         border: Border.all(
           color: showResult && (isCorrect || isSelected)
               ? (isCorrect ? Colors.green.shade300 : Colors.red.shade300)
-              : Colors.white.withOpacity(0.3),
+              : isEliminated
+                  ? Colors.grey.shade600.withOpacity(0.3)
+                  : Colors.white.withOpacity(0.3),
           width: showResult && (isCorrect || isSelected) ? 2 : 1,
         ),
       ),
@@ -349,7 +415,7 @@ class PlayScreen extends ConsumerWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: showResult
+          onTap: (showResult || isEliminated)
               ? null
               : () {
                   developer.log(

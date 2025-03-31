@@ -29,6 +29,10 @@ class GameController extends _$GameController {
   String? _selectedAnswer;
   final _random = math.Random();
 
+  // Hint system
+  int _hintsRemainingForRound = 2; // Maximum 2 hints per round
+  List<String> _eliminatedOptions = []; // Track which options have been eliminated by hints
+
   // Track seen GIFs to avoid repetition
   Set<int> _seenGifIds = {};
 
@@ -91,6 +95,8 @@ class GameController extends _$GameController {
       _highestStreak = 0;
       _selectedAnswer = null;
       _lastRound = null;
+      _hintsRemainingForRound = 2; // Reset hints for new game
+      _eliminatedOptions = []; // Clear eliminated options
 
       // We don't clear _seenGifIds here to maintain the list across games
 
@@ -256,6 +262,8 @@ class GameController extends _$GameController {
   void _moveToNextRound() {
     _currentRoundIndex++;
     _selectedAnswer = null;
+    _hintsRemainingForRound = 2; // Reset hints for new round
+    _eliminatedOptions = []; // Clear eliminated options
 
     // Check if this was the last round
     if (_currentRoundIndex >= _rounds.length) {
@@ -402,5 +410,75 @@ class GameController extends _$GameController {
         sortedEntries.take(maxRecentGifsToTrack),
       );
     }
+  }
+
+  // Hint system methods
+  
+  /// Returns the number of hints remaining for the current round
+  int getHintsRemaining() {
+    return _hintsRemainingForRound;
+  }
+  
+  /// Returns the list of options that have been eliminated by hints
+  List<String> getEliminatedOptions() {
+    return _eliminatedOptions;
+  }
+  
+  /// Uses a hint to eliminate two incorrect options
+  /// Returns true if hint was successfully used, false if no hints remaining
+  bool useHint() {
+    developer.log('useHint called. Hints remaining: $_hintsRemainingForRound, Game status: $state, Selected answer: $_selectedAnswer');
+    
+    if (_hintsRemainingForRound <= 0 || state != GameStatus.playing || _selectedAnswer != null) {
+      developer.log('Cannot use hint: hints remaining: $_hintsRemainingForRound, game status: $state, selected answer: $_selectedAnswer');
+      return false;
+    }
+    
+    final currentRound = getCurrentRound();
+    if (currentRound == null) {
+      developer.log('Cannot use hint: current round is null');
+      return false;
+    }
+    
+    // Get all incorrect options that haven't been eliminated yet
+    final incorrectOptions = currentRound.options
+        .where((option) => 
+            option != currentRound.correctAnswer && 
+            !_eliminatedOptions.contains(option))
+        .toList();
+    
+    developer.log('Incorrect options available for elimination: ${incorrectOptions.length}');
+    
+    // If there are fewer than 2 incorrect options available, use what we have
+    final optionsToEliminate = math.min(2, incorrectOptions.length);
+    
+    if (optionsToEliminate == 0) {
+      developer.log('No options to eliminate');
+      return false; // No options to eliminate
+    }
+    
+    // Shuffle incorrect options to randomize which ones get eliminated
+    incorrectOptions.shuffle(_random);
+    
+    // Add the options to eliminate to our tracking list
+    for (int i = 0; i < optionsToEliminate; i++) {
+      _eliminatedOptions.add(incorrectOptions[i]);
+      developer.log('Eliminated option: ${incorrectOptions[i]}');
+    }
+    
+    // Decrement available hints
+    _hintsRemainingForRound--;
+    
+    developer.log('Hint used successfully. Hints remaining: $_hintsRemainingForRound, Eliminated options: $_eliminatedOptions');
+    
+    // Force a rebuild by setting state to itself with a new instance
+    // This is necessary to trigger UI updates for the eliminated options
+    final currentStatus = state;
+    state = GameStatus.loading; // Temporarily change state to force rebuild
+    Future.microtask(() {
+      state = currentStatus; // Restore original state
+    });
+    
+    return true;
   }
 }
