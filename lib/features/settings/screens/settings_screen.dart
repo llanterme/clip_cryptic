@@ -2,13 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:clip_cryptic/core/theme/app_theme.dart';
 import 'package:clip_cryptic/core/widgets/animated_background.dart';
-import 'package:clip_cryptic/features/user/repositories/user_repository.dart';
+import 'package:clip_cryptic/core/providers/theme_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String _appVersion = '';
+  String _buildNumber = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _getAppVersion();
+  }
+
+  Future<void> _getAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = packageInfo.version;
+      _buildNumber = packageInfo.buildNumber;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeProvider);
+    final isDarkMode = themeMode == ThemeMode.dark;
+
     return AnimatedBackground(
       child: Center(
         child: Column(
@@ -44,97 +70,89 @@ class SettingsScreen extends ConsumerWidget {
                   ),
             ),
             const SizedBox(height: 40),
-            
-            // Testing section
+
+            // Settings options
             Container(
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 32),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.red.withOpacity(0.3),
-                  width: 1,
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Theme toggle
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.bug_report, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Testing Tools',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                            color: isDarkMode ? Colors.amber : Colors.orange,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Dark Mode',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Switch(
+                        value: isDarkMode,
+                        activeColor: AppTheme.primaryColor,
+                        onChanged: (value) {
+                          ref.read(themeProvider.notifier).toggleTheme();
+                        },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'These tools are for development purposes only',
-                    style: TextStyle(
-                      color: Colors.red.shade300,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Delete user button
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      // Show confirmation dialog
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Delete User Data?'),
-                          content: const Text(
-                            'This will remove your user ID from local storage. '
-                            'The app will create a new user ID the next time you start a game.\n\n'
-                            'This is for testing purposes only.',
+
+                  const Divider(height: 32),
+
+                  // App version
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'App Version',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
+                          const SizedBox(height: 4),
+                          Text(
+                            'v$_appVersion ($_buildNumber)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7),
                             ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Delete'),
-                            ),
-                          ],
-                        ),
-                      );
-                      
-                      // If confirmed, delete the user
-                      if (confirm == true) {
-                        await ref.read(userRepositoryProvider.notifier).deleteUser();
-                        
-                        // Show success message
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('User data deleted successfully'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                          ),
+                        ],
                       ),
-                    ),
-                    icon: const Icon(Icons.delete_forever),
-                    label: const Text('Delete User Data'),
+                    ],
                   ),
                 ],
               ),

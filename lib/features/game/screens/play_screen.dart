@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:clip_cryptic/core/theme/app_theme.dart';
 import 'package:clip_cryptic/core/widgets/animated_background.dart';
 import 'package:clip_cryptic/features/game/controllers/game_controller.dart';
@@ -123,14 +124,66 @@ class PlayScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
+                    // Answer Options Header
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.purple.shade500.withOpacity(0.8),
+                              Colors.blue.shade500.withOpacity(0.9),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.purple.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          'What movie is this?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 3.0,
+                                color: Colors.black.withOpacity(0.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                     // Answer Options
                     Expanded(
                       flex: 2,
                       child: GridView.count(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio:
+                            1.2, // Adjust for better button proportions
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        physics:
+                            NeverScrollableScrollPhysics(), // Prevent scrolling
                         children: currentRound.options.map((option) {
                           return _buildAnswerButton(
                             option,
@@ -142,6 +195,52 @@ class PlayScreen extends ConsumerWidget {
                         }).toList(),
                       ),
                     ),
+                    // Hint button
+                    if (selectedAnswer ==
+                        null) // Only show hint when no answer selected
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            // Get the latest hint count each time the state changes
+                            final controller =
+                                ref.read(gameControllerProvider.notifier);
+                            final hintsRemaining =
+                                controller.getHintsRemaining();
+
+                            return ElevatedButton.icon(
+                              onPressed: hintsRemaining > 0
+                                  ? () {
+                                      developer.log('Hint button pressed');
+                                      controller.useHint();
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: hintsRemaining > 0
+                                    ? Colors.amber.shade600
+                                    : Colors.grey.shade700,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                elevation: hintsRemaining > 0 ? 4 : 1,
+                              ),
+                              icon: Icon(Icons.lightbulb_outline),
+                              label: Text(
+                                hintsRemaining > 0
+                                    ? "Use Hint (${hintsRemaining} left)"
+                                    : "No Hints Left",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -219,48 +318,139 @@ class PlayScreen extends ConsumerWidget {
     // Determine button color based on selection and correctness
     Color buttonColor = AppTheme.primaryColor.withOpacity(0.8);
     Color textColor = Colors.white;
+    bool isSelected = option == selectedAnswer;
+    bool isCorrect = option == correctAnswer;
+    bool showResult = selectedAnswer != null;
+    bool isEliminated = controller.getEliminatedOptions().contains(option);
 
-    if (selectedAnswer != null) {
-      if (option == correctAnswer) {
-        // Correct answer
-        buttonColor = Colors.green;
+    // Determine icon to show based on selection and correctness
+    Widget? buttonIcon;
+
+    if (showResult) {
+      if (isCorrect) {
+        // Correct answer - vibrant green
+        buttonColor = Colors.green.shade500;
         textColor = Colors.white;
-      } else if (option == selectedAnswer) {
-        // Selected wrong answer
-        buttonColor = Colors.red;
+        buttonIcon = Icon(Icons.check_circle, color: Colors.white, size: 22);
+      } else if (isSelected) {
+        // Selected wrong answer - vibrant red
+        buttonColor = Colors.red.shade500;
         textColor = Colors.white;
+        buttonIcon = Icon(Icons.cancel, color: Colors.white, size: 22);
       } else {
-        // Other options - fade them out
-        buttonColor = AppTheme.primaryColor.withOpacity(0.4);
-        textColor = Colors.white.withOpacity(0.7);
+        // Other options - more vibrant but slightly muted
+        // Instead of grey, use a muted version of the primary/secondary colors
+        buttonColor = Colors.indigo.withOpacity(0.5);
+        textColor = Colors.white.withOpacity(0.9);
       }
+    } else if (isEliminated) {
+      // Eliminated by hint - greyed out
+      buttonColor = Colors.grey.shade700.withOpacity(0.5);
+      textColor = Colors.white.withOpacity(0.5);
+      buttonIcon = Icon(Icons.not_interested,
+          color: Colors.white.withOpacity(0.5), size: 22);
+    } else {
+      // Default state with gradient
+      buttonColor = Colors.transparent; // Will use gradient instead
     }
 
-    return ElevatedButton(
-      // Add roundIndex to the key to force refresh when round changes
-      key: ValueKey('button_${option}_$roundIndex'),
-      onPressed: selectedAnswer == null
-          ? () {
-              developer
-                  .log('User selected option: $option for round: $roundIndex');
-              controller.submitAnswer(option);
-            }
-          : null, // Disable buttons after selection
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        gradient: showResult
+            ? (isCorrect || isSelected)
+                ? null
+                : LinearGradient(
+                    colors: [
+                      Colors.indigo.shade400.withOpacity(0.7),
+                      Colors.purple.shade400.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+            : isEliminated
+                ? LinearGradient(
+                    colors: [
+                      Colors.grey.shade700.withOpacity(0.5),
+                      Colors.grey.shade800.withOpacity(0.5),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : LinearGradient(
+                    colors: [
+                      Colors.purple.shade500.withOpacity(0.8),
+                      Colors.blue.shade500.withOpacity(0.9),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+        color: buttonColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: showResult && isCorrect
+                ? Colors.green.withOpacity(0.6)
+                : showResult && isSelected
+                    ? Colors.red.withOpacity(0.6)
+                    : isEliminated
+                        ? Colors.black.withOpacity(0.2)
+                        : Colors.purple.withOpacity(0.3),
+            blurRadius: showResult ? 12 : 8,
+            spreadRadius: showResult ? 2 : 1,
+            offset: Offset(0, 3),
+          ),
+        ],
+        border: Border.all(
+          color: showResult && (isCorrect || isSelected)
+              ? (isCorrect ? Colors.green.shade300 : Colors.red.shade300)
+              : isEliminated
+                  ? Colors.grey.shade600.withOpacity(0.3)
+                  : Colors.white.withOpacity(0.3),
+          width: showResult && (isCorrect || isSelected) ? 2 : 1,
         ),
-        backgroundColor: buttonColor,
-        disabledBackgroundColor: buttonColor, // Keep the color when disabled
       ),
-      child: Text(
-        option,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: (showResult || isEliminated)
+              ? null
+              : () {
+                  developer.log(
+                      'User selected option: $option for round: $roundIndex');
+                  controller.submitAnswer(option);
+                },
+          splashColor: AppTheme.primaryColor.withOpacity(0.3),
+          highlightColor: AppTheme.primaryColor.withOpacity(0.1),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (buttonIcon != null) ...[
+                  buttonIcon,
+                  SizedBox(height: 4),
+                ],
+                Flexible(
+                  child: AutoSizeText(
+                    option,
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    minFontSize: 10,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -706,36 +896,215 @@ class PlayScreen extends ConsumerWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.error_outline,
-          size: 64,
-          color: Colors.red,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Oops! Something went wrong',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
+        // Error animation container with shadow
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.3),
+                blurRadius: 15,
+                spreadRadius: 5,
               ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Failed to load game data',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white70,
-              ),
+            ],
+          ),
+          child: Icon(
+            Icons.cloud_off,
+            size: 64,
+            color: Colors.red,
+          ),
         ),
         const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: controller.startGame,
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            backgroundColor: AppTheme.primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        // Error title with gradient effect
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [Colors.red.shade300, Colors.red.shade600],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            'Connection Error',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Detailed error message
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.red.withOpacity(0.3),
+              width: 1,
             ),
           ),
-          child: Text('Try Again'),
+          child: Column(
+            children: [
+              Text(
+                'Unable to connect to the game server',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'The server might be temporarily unavailable or your internet connection may be down.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        // Troubleshooting tips
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.blue.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  'Troubleshooting Tips:',
+                  style: TextStyle(
+                    color: Colors.blue.shade300,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildTroubleshootingItem(
+                Icons.wifi_off,
+                'Check your internet connection',
+              ),
+              const SizedBox(height: 4),
+              _buildTroubleshootingItem(
+                Icons.refresh,
+                'Try again in a few moments',
+              ),
+              const SizedBox(height: 4),
+              _buildTroubleshootingItem(
+                Icons.settings,
+                'Restart the app if the problem persists',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        // Action buttons
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Try Again button
+            ElevatedButton(
+              onPressed: controller.startGame,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                backgroundColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 3,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.refresh, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Try Again',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Go Home button
+            OutlinedButton(
+              onPressed: () {
+                // Navigate back to home screen
+                controller.resetGame();
+                // Use context.go if you're using go_router
+                // context.go('/');
+              },
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                side: BorderSide(color: Colors.white70),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.home, color: Colors.white70),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Go Home',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Helper method for troubleshooting items
+  Widget _buildTroubleshootingItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: Colors.blue.shade200,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: Colors.blue,
+              fontSize: 14,
+            ),
+          ),
         ),
       ],
     );

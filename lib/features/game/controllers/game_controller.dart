@@ -29,15 +29,16 @@ class GameController extends _$GameController {
   String? _selectedAnswer;
   final _random = math.Random();
 
+  // Hint system - changed to be per game instead of per round
+  int _hintsRemainingForGame = 2; // Maximum 2 hints per game
+  List<String> _eliminatedOptions = []; // Track which options have been eliminated by hints
+
   // Track seen GIFs to avoid repetition
   Set<int> _seenGifIds = {};
 
   // Track recently played GIFs to avoid showing the same ones in consecutive games
   // Map of GIF ID to count of recent appearances
   Map<int, int> _recentlyPlayedGifs = {};
-
-  // Maximum number of times a GIF can appear in recent games before being deprioritized
-  static const int _maxRecentAppearances = 2;
 
   @override
   GameStatus build() => GameStatus.initial;
@@ -91,6 +92,11 @@ class GameController extends _$GameController {
       _highestStreak = 0;
       _selectedAnswer = null;
       _lastRound = null;
+      _hintsRemainingForGame = 2; // Reset hints for new game
+      _eliminatedOptions = []; // Clear eliminated options
+
+      // Clean up old entries in _recentlyPlayedGifs to prevent the map from growing too large
+      _cleanupRecentlyPlayedGifs();
 
       // We don't clear _seenGifIds here to maintain the list across games
 
@@ -242,6 +248,8 @@ class GameController extends _$GameController {
       // Wrong answer
       _lastAnswerCorrect = false;
       _currentStreak = 0;
+      _hintsRemainingForGame = 2; // Reset hints for next round
+      _eliminatedOptions = []; // Clear eliminated options
 
       developer.log('Wrong answer! Correct was: ${currentRound.correctAnswer}');
 
@@ -256,6 +264,8 @@ class GameController extends _$GameController {
   void _moveToNextRound() {
     _currentRoundIndex++;
     _selectedAnswer = null;
+    _eliminatedOptions = []; // Clear eliminated options for the new round
+    // Don't reset hints - they're now per game
 
     // Check if this was the last round
     if (_currentRoundIndex >= _rounds.length) {
@@ -384,23 +394,91 @@ class GameController extends _$GameController {
     });
   }
 
-  // Clean up the recently played GIFs map to prevent it from growing too large
+  /// Cleans up old entries in the _recentlyPlayedGifs map
+  /// to prevent it from growing too large over time
   void _cleanupRecentlyPlayedGifs() {
-    // Remove GIFs that have reached the maximum appearance count
-    _recentlyPlayedGifs
-        .removeWhere((gifId, count) => count >= _maxRecentAppearances);
-
-    // If the map is still too large, keep only the most recent entries
-    const int maxRecentGifsToTrack = 50;
-    if (_recentlyPlayedGifs.length > maxRecentGifsToTrack) {
-      // Sort by count (descending)
+    // If we have more than 100 entries, remove the oldest ones
+    if (_recentlyPlayedGifs.length > 100) {
+      // Sort by count (ascending) and take only the top 50
       final sortedEntries = _recentlyPlayedGifs.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-
-      // Create a new map with only the top entries
+        ..sort((a, b) => a.value.compareTo(b.value));
+      
+      // Keep only the most frequently played 50 GIFs
       _recentlyPlayedGifs = Map.fromEntries(
-        sortedEntries.take(maxRecentGifsToTrack),
+        sortedEntries.skip(sortedEntries.length - 50),
       );
+      
+      developer.log('Cleaned up _recentlyPlayedGifs, now has ${_recentlyPlayedGifs.length} entries');
     }
+  }
+
+  // Hint system methods
+  
+  /// Returns the number of hints remaining for the game
+  int getHintsRemaining() {
+    return _hintsRemainingForGame;
+  }
+  
+  /// Returns the list of options that have been eliminated by hints
+  List<String> getEliminatedOptions() {
+    return _eliminatedOptions;
+  }
+  
+  /// Uses a hint to eliminate two incorrect options
+  /// Returns true if hint was successfully used, false if no hints remaining
+  bool useHint() {
+    developer.log('useHint called. Hints remaining: $_hintsRemainingForGame, Game status: $state, Selected answer: $_selectedAnswer');
+    
+    if (_hintsRemainingForGame <= 0 || state != GameStatus.playing || _selectedAnswer != null) {
+      developer.log('Cannot use hint: hints remaining: $_hintsRemainingForGame, game status: $state, selected answer: $_selectedAnswer');
+      return false;
+    }
+    
+    final currentRound = getCurrentRound();
+    if (currentRound == null) {
+      developer.log('Cannot use hint: current round is null');
+      return false;
+    }
+    
+    // Get all incorrect options that haven't been eliminated yet
+    final incorrectOptions = currentRound.options
+        .where((option) => 
+            option != currentRound.correctAnswer && 
+            !_eliminatedOptions.contains(option))
+        .toList();
+    
+    developer.log('Incorrect options available for elimination: ${incorrectOptions.length}');
+    
+    // If there are fewer than 2 incorrect options available, use what we have
+    final optionsToEliminate = math.min(2, incorrectOptions.length);
+    
+    if (optionsToEliminate == 0) {
+      developer.log('No options to eliminate');
+      return false; // No options to eliminate
+    }
+    
+    // Shuffle incorrect options to randomize which ones get eliminated
+    incorrectOptions.shuffle(_random);
+    
+    // Add the options to eliminate to our tracking list
+    for (int i = 0; i < optionsToEliminate; i++) {
+      _eliminatedOptions.add(incorrectOptions[i]);
+      developer.log('Eliminated option: ${incorrectOptions[i]}');
+    }
+    
+    // Decrement available hints
+    _hintsRemainingForGame--;
+    
+    developer.log('Hint used successfully. Hints remaining: $_hintsRemainingForGame, Eliminated options: $_eliminatedOptions');
+    
+    // Force a rebuild by setting state to itself with a new instance
+    // This is necessary to trigger UI updates for the eliminated options
+    final currentStatus = state;
+    state = GameStatus.loading; // Temporarily change state to force rebuild
+    Future.microtask(() {
+      state = currentStatus; // Restore original state
+    });
+    
+    return true;
   }
 }

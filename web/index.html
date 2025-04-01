@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClipCryptic - Movie GIF Quiz Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6C63FF;
+            --secondary-color: #00BFA6;
+            --accent-color: #FF6584;
+            --dark-purple: #4B45B2;
+            --light-purple: #8B84FF;
+            --text-color: #FFFFFF;
+            --background-dark: #121212;
+            --background-light: #1E1E1E;
+            --card-bg: rgba(30, 30, 30, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-dark);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.2) 0%, rgba(0, 191, 166, 0.2) 100%);
+            z-index: -1;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+            opacity: 0;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: var(--opacity); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            padding: 2rem 0;
+            position: relative;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, var(--dark-purple), var(--primary-color));
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(108, 99, 255, 0.3);
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: translateY(-5px);
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #FFD700;
+            margin-right: 15px;
+        }
+
+        .logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 2.2rem;
+            background: linear-gradient(to right, #FFFFFF, #E0E0FF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .tagline {
+            text-align: center;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 3rem;
+            font-style: italic;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 0;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            z-index: 1;
+        }
+
+        h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-purple));
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(108, 99, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid var(--secondary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(0, 191, 166, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 191, 166, 0.3);
+        }
+
+        .features {
+            padding: 6rem 0;
+            position: relative;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            font-weight: 700;
+            color: white;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(108, 99, 255, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .feature-description {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+
+        .how-to-play {
+            padding: 6rem 0;
+            background: linear-gradient(135deg, rgba(75, 69, 178, 0.3), rgba(0, 191, 166, 0.3));
+            position: relative;
+        }
+
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .step:hover {
+            transform: scale(1.03);
+        }
+
+        .step-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            background: rgba(108, 99, 255, 0.1);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .step-description {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+
+        .game-preview {
+            padding: 6rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .preview-container {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            margin-top: 3rem;
+        }
+
+        .device-mockup {
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            border: 15px solid #2a2a2a;
+            position: relative;
+            background: #000;
+            aspect-ratio: 9/16;
+            max-height: 600px;
+        }
+
+        .device-mockup img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .game-screenshot {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--dark-purple), var(--background-dark));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .screenshot-gif {
+            width: 80%;
+            height: 40%;
+            background: #333;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .screenshot-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .option-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-purple));
+            padding: 1rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-section {
+            padding: 6rem 0;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.2), rgba(0, 191, 166, 0.2));
+            position: relative;
+        }
+
+        .cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .cta-title {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .cta-description {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        footer {
+            background-color: var(--background-light);
+            padding: 3rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            margin: 1.5rem 0;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--primary-color);
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .social-icon {
+            color: white;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-icon:hover {
+            color: var(--primary-color);
+            transform: translateY(-5px);
+        }
+
+        .copyright {
+            margin-top: 2rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .step {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .step-number {
+                margin-bottom: 1rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Animation for floating elements */
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Animated gradient background */
+        .animated-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.5;
+            background: linear-gradient(-45deg, rgba(108, 99, 255, 0.3), rgba(0, 191, 166, 0.3), rgba(255, 101, 132, 0.3), rgba(75, 69, 178, 0.3));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    <div class="stars" id="stars"></div>
+    
+    <header>
+        <div class="container">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-film"></i>
+                    <div class="logo-text">ClipCryptic</div>
+                </div>
+            </div>
+            <div class="tagline">Can you guess the movie from just a GIF?</div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="animated-gradient"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h1>The Ultimate Movie GIF Quiz Challenge</h1>
+                <p>
+                    ClipCryptic is an addictive movie quiz game that tests your film knowledge with animated GIFs. 
+                    Identify movies from short clips, earn points, build streaks, and compete with friends to see 
+                    who's the ultimate movie buff!
+                </p>
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Download Now
+                    </a>
+                    <a href="#how-to-play" class="btn btn-secondary">
+                        <i class="fas fa-play"></i> How To Play
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Game Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-film feature-icon"></i>
+                    <h3 class="feature-title">Movie GIF Challenges</h3>
+                    <p class="feature-description">
+                        Test your movie knowledge with carefully selected GIF clips from classic and modern films.
+                        Each GIF gives you just enough to make an educated guess!
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-fire feature-icon"></i>
+                    <h3 class="feature-title">Build Your Streak</h3>
+                    <p class="feature-description">
+                        Answer correctly to build your streak and multiply your points. 
+                        How long can you keep your perfect streak going?
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-star feature-icon"></i>
+                    <h3 class="feature-title">Score Points</h3>
+                    <p class="feature-description">
+                        Earn points for each correct answer and climb the global leaderboard.
+                        Compete with friends to see who has the best movie knowledge!
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-trophy feature-icon"></i>
+                    <h3 class="feature-title">Leaderboards</h3>
+                    <p class="feature-description">
+                        Compare your scores with players worldwide and see where you rank.
+                        Can you make it to the top of the movie buffs list?
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-lightbulb feature-icon"></i>
+                    <h3 class="feature-title">Multiple Genres</h3>
+                    <p class="feature-description">
+                        From action to comedy, horror to sci-fi, test your knowledge across
+                        all movie genres and discover your specialty!
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-mobile-alt feature-icon"></i>
+                    <h3 class="feature-title">Play Anywhere</h3>
+                    <p class="feature-description">
+                        Available on mobile devices, play ClipCryptic anytime, anywhere.
+                        Perfect for movie nights, parties, or solo challenges!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-to-play" id="how-to-play">
+        <div class="animated-gradient"></div>
+        <div class="container">
+            <h2 class="section-title">How To Play</h2>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Start a New Game</h3>
+                        <p class="step-description">
+                            Launch the app and tap on the "Start New Game" button to begin your movie guessing challenge.
+                            Each game consists of multiple rounds of increasing difficulty.
+                        </p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Watch the GIF</h3>
+                        <p class="step-description">
+                            A short GIF clip from a movie will be displayed. Watch carefully for any clues that might help
+                            you identify the film - actors, scenes, settings, or iconic moments.
+                        </p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Choose Your Answer</h3>
+                        <p class="step-description">
+                            Select from six possible movie titles. Only one is correct! Choose wisely to earn points
+                            and build your streak. The faster you answer, the more points you'll earn.
+                        </p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Build Your Score</h3>
+                        <p class="step-description">
+                            Each correct answer earns you points and increases your streak multiplier. Try to answer all
+                            questions correctly to maximize your score and climb the leaderboard!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="game-preview">
+        <div class="container">
+            <h2 class="section-title">Game Preview</h2>
+            <div class="preview-container">
+                <div class="device-mockup">
+                    <div class="game-screenshot">
+                        <div class="screenshot-gif">
+                            [Animated Movie GIF Would Appear Here]
+                        </div>
+                        <h3 style="margin-bottom: 1.5rem; color: white;">What movie is this?</h3>
+                        <div class="screenshot-options">
+                            <div class="option-button">Inception</div>
+                            <div class="option-button">The Matrix</div>
+                            <div class="option-button">Interstellar</div>
+                            <div class="option-button">Avatar</div>
+                            <div class="option-button">Tenet</div>
+                            <div class="option-button">Blade Runner</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="animated-gradient"></div>
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Test Your Movie Knowledge?</h2>
+                <p class="cta-description">
+                    Download ClipCryptic now and challenge yourself and friends to see who's the ultimate movie buff!
+                    Available on iOS and Android.
+                </p>
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary">
+                        <i class="fab fa-apple"></i> Download for iOS
+                    </a>
+                    <a href="#" class="btn btn-primary">
+                        <i class="fab fa-android"></i> Download for Android
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">ClipCryptic</div>
+                <p>The ultimate movie guessing game for film enthusiasts</p>
+                <div class="footer-links">
+                    <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                    <a href="#" class="footer-link">Terms of Service</a>
+                    <a href="#" class="footer-link">Contact Us</a>
+                    <a href="#" class="footer-link">Support</a>
+                </div>
+                <div class="social-icons">
+                    <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
+                </div>
+                <p class="copyright">&copy; 2025 ClipCryptic. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Create stars in the background
+        const starsContainer = document.getElementById('stars');
+        const starsCount = 100;
+        
+        for (let i = 0; i < starsCount; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            
+            // Random position
+            const posX = Math.random() * 100;
+            const posY = Math.random() * 100;
+            
+            // Random size
+            const size = Math.random() * 3;
+            
+            // Random duration and opacity for twinkling
+            const duration = 3 + Math.random() * 7;
+            const opacity = 0.2 + Math.random() * 0.8;
+            
+            star.style.left = `${posX}%`;
+            star.style.top = `${posY}%`;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.setProperty('--duration', `${duration}s`);
+            star.style.setProperty('--opacity', opacity);
+            
+            starsContainer.appendChild(star);
+        }
+    </script>
+</body>
+</html>
