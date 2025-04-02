@@ -176,14 +176,13 @@ class PlayScreen extends ConsumerWidget {
                     Expanded(
                       flex: 2,
                       child: GridView.count(
-                        crossAxisCount: 3,
+                        crossAxisCount: 2,
                         mainAxisSpacing: 12,
                         crossAxisSpacing: 12,
-                        childAspectRatio:
-                            1.2, // Adjust for better button proportions
+                        childAspectRatio: 2.0,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        physics:
-                            NeverScrollableScrollPhysics(), // Prevent scrolling
+                        // Allow scrolling to see all options
+                        physics: ClampingScrollPhysics(),
                         children: currentRound.options.map((option) {
                           return _buildAnswerButton(
                             option,
@@ -196,13 +195,11 @@ class PlayScreen extends ConsumerWidget {
                       ),
                     ),
                     // Hint button
-                    if (selectedAnswer ==
-                        null) // Only show hint when no answer selected
+                    if (selectedAnswer == null)
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
                         child: Consumer(
                           builder: (context, ref, _) {
-                            // Get the latest hint count each time the state changes
                             final controller =
                                 ref.read(gameControllerProvider.notifier);
                             final hintsRemaining =
@@ -263,7 +260,6 @@ class PlayScreen extends ConsumerWidget {
     return Image.network(
       url,
       fit: BoxFit.cover,
-      // Add roundIndex to the key to force refresh when round changes
       key: ValueKey('gif_$roundIndex'),
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
@@ -315,7 +311,6 @@ class PlayScreen extends ConsumerWidget {
     String? selectedAnswer,
     String correctAnswer,
   ) {
-    // Determine button color based on selection and correctness
     Color buttonColor = AppTheme.primaryColor.withOpacity(0.8);
     Color textColor = Colors.white;
     bool isSelected = option == selectedAnswer;
@@ -323,35 +318,28 @@ class PlayScreen extends ConsumerWidget {
     bool showResult = selectedAnswer != null;
     bool isEliminated = controller.getEliminatedOptions().contains(option);
 
-    // Determine icon to show based on selection and correctness
     Widget? buttonIcon;
 
     if (showResult) {
       if (isCorrect) {
-        // Correct answer - vibrant green
         buttonColor = Colors.green.shade500;
         textColor = Colors.white;
         buttonIcon = Icon(Icons.check_circle, color: Colors.white, size: 22);
       } else if (isSelected) {
-        // Selected wrong answer - vibrant red
         buttonColor = Colors.red.shade500;
         textColor = Colors.white;
         buttonIcon = Icon(Icons.cancel, color: Colors.white, size: 22);
       } else {
-        // Other options - more vibrant but slightly muted
-        // Instead of grey, use a muted version of the primary/secondary colors
         buttonColor = Colors.indigo.withOpacity(0.5);
         textColor = Colors.white.withOpacity(0.9);
       }
     } else if (isEliminated) {
-      // Eliminated by hint - greyed out
       buttonColor = Colors.grey.shade700.withOpacity(0.5);
       textColor = Colors.white.withOpacity(0.5);
       buttonIcon = Icon(Icons.not_interested,
           color: Colors.white.withOpacity(0.5), size: 22);
     } else {
-      // Default state with gradient
-      buttonColor = Colors.transparent; // Will use gradient instead
+      buttonColor = Colors.transparent;
     }
 
     return AnimatedContainer(
@@ -464,13 +452,11 @@ class PlayScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SizedBox(height: 40),
-          // Movie-themed logo design
           Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Film reel icon
                   Icon(
                     Icons.movie,
                     size: 40,
@@ -511,7 +497,6 @@ class PlayScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              // Tagline
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -530,7 +515,6 @@ class PlayScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 36),
-          // Play button with gradient and animation
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -563,14 +547,12 @@ class PlayScreen extends ConsumerWidget {
                   color: Colors.white,
                 ),
                 onPressed: () {
-                  // Simply start the game - user creation is handled by the welcome screen
                   controller.startGame();
                 },
               ),
             ),
           ),
           const SizedBox(height: 32),
-          // Game description
           Container(
             width: double.infinity,
             margin: const EdgeInsets.symmetric(horizontal: 40),
@@ -718,14 +700,12 @@ class PlayScreen extends ConsumerWidget {
     final highestStreak = controller.getHighestStreak();
     final correctAnswer = controller.getCorrectAnswer();
 
-    // Log for debugging
     developer
         .log('Building Game Over screen with correct answer: "$correctAnswer"');
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Animated container with sad face
         Container(
           width: 120,
           height: 120,
@@ -747,7 +727,6 @@ class PlayScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 24),
-        // Game over text with animated effect
         ShaderMask(
           shaderCallback: (bounds) => LinearGradient(
             colors: [Colors.red.shade300, Colors.red.shade600],
@@ -763,8 +742,6 @@ class PlayScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 24),
-
-        // Clear display for correct answer
         if (correctAnswer.isNotEmpty) ...[
           Text(
             'The correct answer was:',
@@ -791,9 +768,7 @@ class PlayScreen extends ConsumerWidget {
             ),
           ),
         ],
-
         const SizedBox(height: 24),
-        // Score display with improved design
         Container(
           width: double.infinity,
           margin: const EdgeInsets.symmetric(horizontal: 40),
@@ -861,7 +836,6 @@ class PlayScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 32),
-        // Play Again button with improved design
         ElevatedButton(
           onPressed: controller.resetGame,
           style: ElevatedButton.styleFrom(
@@ -896,7 +870,6 @@ class PlayScreen extends ConsumerWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Error animation container with shadow
         Container(
           width: 120,
           height: 120,
@@ -918,7 +891,6 @@ class PlayScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 24),
-        // Error title with gradient effect
         ShaderMask(
           shaderCallback: (bounds) => LinearGradient(
             colors: [Colors.red.shade300, Colors.red.shade600],
@@ -934,7 +906,6 @@ class PlayScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        // Detailed error message
         Container(
           width: double.infinity,
           margin: const EdgeInsets.symmetric(horizontal: 32),
@@ -971,7 +942,6 @@ class PlayScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 32),
-        // Troubleshooting tips
         Container(
           width: double.infinity,
           margin: const EdgeInsets.symmetric(horizontal: 32),
@@ -1016,11 +986,9 @@ class PlayScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 32),
-        // Action buttons
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Try Again button
             ElevatedButton(
               onPressed: controller.startGame,
               style: ElevatedButton.styleFrom(
@@ -1049,13 +1017,9 @@ class PlayScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 16),
-            // Go Home button
             OutlinedButton(
               onPressed: () {
-                // Navigate back to home screen
                 controller.resetGame();
-                // Use context.go if you're using go_router
-                // context.go('/');
               },
               style: OutlinedButton.styleFrom(
                 padding:
@@ -1087,7 +1051,6 @@ class PlayScreen extends ConsumerWidget {
     );
   }
 
-  // Helper method for troubleshooting items
   Widget _buildTroubleshootingItem(IconData icon, String text) {
     return Row(
       children: [
