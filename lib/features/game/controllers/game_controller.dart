@@ -30,7 +30,7 @@ class GameController extends _$GameController {
   final _random = math.Random();
 
   // Hint system - changed to be per game instead of per round
-  int _hintsRemainingForGame = 2; // Maximum 2 hints per game
+  int _hintsRemainingForGame = 4; // Maximum 4 hints per game
   List<String> _eliminatedOptions = []; // Track which options have been eliminated by hints
 
   // Track seen GIFs to avoid repetition
@@ -92,7 +92,7 @@ class GameController extends _$GameController {
       _highestStreak = 0;
       _selectedAnswer = null;
       _lastRound = null;
-      _hintsRemainingForGame = 2; // Reset hints for new game
+      _hintsRemainingForGame = 4; // Reset hints for new game
       _eliminatedOptions = []; // Clear eliminated options
 
       // Clean up old entries in _recentlyPlayedGifs to prevent the map from growing too large
@@ -248,7 +248,7 @@ class GameController extends _$GameController {
       // Wrong answer
       _lastAnswerCorrect = false;
       _currentStreak = 0;
-      _hintsRemainingForGame = 2; // Reset hints for next round
+      _hintsRemainingForGame = 4; // Reset hints for next round
       _eliminatedOptions = []; // Clear eliminated options
 
       developer.log('Wrong answer! Correct was: ${currentRound.correctAnswer}');
