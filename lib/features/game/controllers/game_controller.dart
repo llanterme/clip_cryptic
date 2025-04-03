@@ -481,4 +481,26 @@ class GameController extends _$GameController {
     
     return true;
   }
+
+  /// Skips the current GIF and moves to the next round
+  /// Used when a GIF fails to load
+  void skipToNextGif() {
+    developer.log('Skipping GIF due to loading failure');
+    
+    // Mark the current GIF as seen even though it failed to load
+    final currentRound = getCurrentRound();
+    if (currentRound != null) {
+      _seenGifIds.add(currentRound.gifId);
+      
+      // Update recently played GIFs counter
+      _recentlyPlayedGifs.update(
+        currentRound.gifId,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    
+    // Move to the next round without changing score or streak
+    _moveToNextRound();
+  }
 }
