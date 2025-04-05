@@ -41,7 +41,7 @@ class AdService {
   String _getBannerAdUnitId() {
     if (Platform.isAndroid) {
       // Test ad unit ID for Android
-      return 'ca-app-pub-5183899333761387~7468172308';
+      return 'ca-app-pub-5183899333761387/4842008966';
     } else if (Platform.isIOS) {
       // Test ad unit ID for iOS
       return 'ca-app-pub-5183899333761387/7653733506';
