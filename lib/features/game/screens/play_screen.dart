@@ -5,6 +5,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:clip_cryptic/core/theme/app_theme.dart';
 import 'package:clip_cryptic/core/widgets/animated_background.dart';
 import 'package:clip_cryptic/features/game/controllers/game_controller.dart';
+import 'package:clip_cryptic/core/services/ad_service.dart';
 
 class PlayScreen extends ConsumerWidget {
   const PlayScreen({super.key});
@@ -241,6 +242,10 @@ class PlayScreen extends ConsumerWidget {
                           },
                         ),
                       ),
+                      
+                      // Banner Ad below the Use Hint button
+                      const SizedBox(height: 8),
+                      const BannerAdWidget(),
                   ],
                 ),
               ),
