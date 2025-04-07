@@ -1,4 +1,6 @@
 PODS:
+  - app_tracking_transparency (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
   - Google-Mobile-Ads-SDK (10.11.0):
     - GoogleAppMeasurement (< 11.0, >= 7.0)
@@ -69,6 +71,7 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
+  - app_tracking_transparency (from `.symlinks/plugins/app_tracking_transparency/ios`)
   - Flutter (from `Flutter`)
   - google_mobile_ads (from `.symlinks/plugins/google_mobile_ads/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
@@ -85,6 +88,8 @@ SPEC REPOS:
     - PromisesObjC
 
 EXTERNAL SOURCES:
+  app_tracking_transparency:
+    :path: ".symlinks/plugins/app_tracking_transparency/ios"
   Flutter:
     :path: Flutter
   google_mobile_ads:
@@ -97,6 +102,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
+  app_tracking_transparency: e169b653478da7bb15a6c61209015378ca73e375
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   Google-Mobile-Ads-SDK: 58b4fda3f9758fc1ed210aa5cf7777b5eb55d47e
   google_mobile_ads: 511febb4768edc860ee455a9e201ff52de385908
